@@ -30,6 +30,7 @@ public class User {
     private Instant emailVerifiedAt;
     private Instant kycVerifiedAt;
     private String kycRejectionNote;
+    private String oneSignalPlayerId;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -122,6 +123,14 @@ public class User {
 
     public void setKycRejectionNote(String kycRejectionNote) {
         this.kycRejectionNote = kycRejectionNote;
+    }
+
+    public String getOneSignalPlayerId() {
+        return oneSignalPlayerId;
+    }
+
+    public void setOneSignalPlayerId(String oneSignalPlayerId) {
+        this.oneSignalPlayerId = oneSignalPlayerId;
     }
 
     public Instant getCreatedAt() {

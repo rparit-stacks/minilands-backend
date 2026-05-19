@@ -1,12 +1,13 @@
 package com.minilands.backend.service.notification;
 
 import com.minilands.backend.dto.notification.NotificationResponse;
+import com.minilands.backend.dto.notification.RegisterPushDeviceRequest;
 import com.minilands.backend.entity.enums.NotificationType;
 
 import java.util.List;
 
 /**
- * User notifications — read/mark; other services publish via this contract (DIP).
+ * Application facade: in-app inbox + outbound delivery (email, mobile push).
  */
 public interface NotificationService {
 
@@ -17,4 +18,6 @@ public interface NotificationService {
     void markAsRead(String userId, String notificationId);
 
     void send(String userId, NotificationType type, String title, String message);
+
+    void registerPushDevice(String userId, RegisterPushDeviceRequest request);
 }

@@ -1,11 +1,17 @@
 package com.minilands.backend.service.notification.impl;
 
+import com.minilands.backend.config.NotificationProperties;
+import com.minilands.backend.dto.notification.NotificationMessage;
 import com.minilands.backend.dto.notification.NotificationResponse;
+import com.minilands.backend.dto.notification.RegisterPushDeviceRequest;
 import com.minilands.backend.entity.Notification;
+import com.minilands.backend.entity.User;
 import com.minilands.backend.entity.enums.NotificationType;
 import com.minilands.backend.repository.NotificationRepository;
+import com.minilands.backend.repository.UserRepository;
 import com.minilands.backend.service.notification.NotificationService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -14,9 +20,19 @@ import java.util.List;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
+    private final NotificationDeliveryOrchestrator deliveryOrchestrator;
+    private final NotificationProperties notificationProperties;
 
-    public NotificationServiceImpl(NotificationRepository notificationRepository) {
+    public NotificationServiceImpl(
+            NotificationRepository notificationRepository,
+            UserRepository userRepository,
+            NotificationDeliveryOrchestrator deliveryOrchestrator,
+            NotificationProperties notificationProperties) {
         this.notificationRepository = notificationRepository;
+        this.userRepository = userRepository;
+        this.deliveryOrchestrator = deliveryOrchestrator;
+        this.notificationProperties = notificationProperties;
     }
 
     @Override
@@ -43,7 +59,35 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional
     public void send(String userId, NotificationType type, String title, String message) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (notificationProperties.isInAppEnabled()) {
+            persistInApp(userId, type, title, message);
+        }
+
+        deliveryOrchestrator.deliverOutbound(new NotificationMessage(
+                userId,
+                user.getEmail(),
+                user.getOneSignalPlayerId(),
+                type,
+                title,
+                message));
+    }
+
+    @Override
+    @Transactional
+    public void registerPushDevice(String userId, RegisterPushDeviceRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        user.setOneSignalPlayerId(request.playerId().trim());
+        user.setUpdatedAt(Instant.now());
+        userRepository.save(user);
+    }
+
+    private void persistInApp(String userId, NotificationType type, String title, String message) {
         Notification notification = new Notification();
         notification.setUserId(userId);
         notification.setType(type);

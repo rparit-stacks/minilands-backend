@@ -14,7 +14,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
         CloudinaryProperties.class,
         AdminBootstrapProperties.class,
         RazorpayProperties.class,
-        WalletProperties.class
+        WalletProperties.class,
+        NotificationProperties.class,
+        OneSignalProperties.class
 })
 public class AppConfig {
 

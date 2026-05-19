@@ -20,6 +20,7 @@ public class PropertyMedia {
     private String mediaUrl;
     private boolean primary;
     private Integer displayOrder;
+    private String caption;
     private Instant createdAt;
 
     public PropertyMedia() {
@@ -71,6 +72,14 @@ public class PropertyMedia {
 
     public void setDisplayOrder(Integer displayOrder) {
         this.displayOrder = displayOrder;
+    }
+
+    public String getCaption() {
+        return caption;
+    }
+
+    public void setCaption(String caption) {
+        this.caption = caption;
     }
 
     public Instant getCreatedAt() {

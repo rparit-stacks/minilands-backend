@@ -62,7 +62,10 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
         if (path.startsWith("/api/kyc/")
                 || path.startsWith("/api/notifications/")
                 || path.startsWith("/api/media/")
-                || path.startsWith("/api/wallet/")) {
+                || path.startsWith("/api/wallet/")
+                || path.startsWith("/api/properties")
+                || path.startsWith("/api/investments")
+                || path.startsWith("/api/dashboard")) {
             if (hasRole(authentication, "ROLE_ADMIN")) {
                 return "Investor access required. Use an investor access token from OTP or Google sign-in, "
                         + "not the admin login token.";

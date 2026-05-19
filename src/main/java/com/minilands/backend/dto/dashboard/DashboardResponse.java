@@ -1,6 +1,6 @@
 package com.minilands.backend.dto.dashboard;
 
-import com.minilands.backend.dto.investment.HoldingResponse;
+import com.minilands.backend.dto.investment.HoldingDetailResponse;
 import com.minilands.backend.dto.voting.ProposalResponse;
 import com.minilands.backend.dto.wallet.TransactionResponse;
 
@@ -10,7 +10,7 @@ import java.util.List;
 public record DashboardResponse(
         PortfolioSummary portfolioSummary,
         BigDecimal walletBalance,
-        List<HoldingResponse> holdings,
+        List<HoldingDetailResponse> holdings,
         List<ProposalResponse> pendingVotes,
         List<UpcomingRoi> upcomingRoi,
         List<TransactionResponse> recentTransactions

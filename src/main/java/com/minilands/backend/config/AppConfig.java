@@ -18,7 +18,8 @@ import org.springframework.web.client.RestClient;
         RazorpayProperties.class,
         WalletProperties.class,
         NotificationProperties.class,
-        OneSignalProperties.class
+        OneSignalProperties.class,
+        InvestmentProperties.class
 })
 public class AppConfig {
 

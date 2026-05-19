@@ -1,24 +1,72 @@
 package com.minilands.backend.dto.property;
 
+import com.minilands.backend.entity.enums.AssetClass;
+import com.minilands.backend.entity.enums.DistributionFrequency;
+import com.minilands.backend.entity.enums.LegalStatus;
+import com.minilands.backend.entity.enums.ListingVisibility;
 import com.minilands.backend.entity.enums.PropertyStatus;
+import com.minilands.backend.entity.enums.PropertyType;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 public record PropertyDetailResponse(
         String id,
+        String slug,
         String name,
+        String tagline,
+        String shortDescription,
         String description,
-        String location,
+        PropertyType propertyType,
+        AssetClass assetClass,
+        PropertyLocationDto location,
+        String currency,
         BigDecimal totalTarget,
         Integer totalShares,
         BigDecimal sharePrice,
         BigDecimal currentPrice,
+        BigDecimal minInvestmentAmount,
+        Integer maxSharesPerInvestor,
+        BigDecimal sharesSold,
+        BigDecimal sharesRemaining,
         BigDecimal annualRoi,
         BigDecimal monthlyRoi,
+        BigDecimal projectedAnnualYield,
+        BigDecimal rentalYieldPercent,
+        BigDecimal expectedIrrPercent,
+        BigDecimal appreciationRatePercent,
+        DistributionFrequency distributionFrequency,
+        Integer holdPeriodMonths,
+        String developerName,
+        String builderName,
+        String spvName,
+        String reraRegistrationId,
+        Integer yearBuilt,
+        BigDecimal carpetAreaSqFt,
+        BigDecimal builtUpAreaSqFt,
+        BigDecimal plotAreaSqFt,
+        Integer floors,
+        Integer totalUnits,
+        List<String> amenities,
+        List<String> highlights,
+        LegalStatus legalStatus,
+        boolean titleVerified,
+        String dueDiligenceSummary,
+        List<PropertyDocumentDto> documents,
         PropertyStatus status,
+        ListingVisibility listingVisibility,
+        boolean featured,
+        Integer displayOrder,
         Integer currentInvestors,
         BigDecimal totalRaised,
-        List<String> mediaUrls
+        BigDecimal fundingProgressPercent,
+        boolean fundingOpen,
+        Instant fundingDeadline,
+        Instant fundedAt,
+        Instant publishedAt,
+        Instant createdAt,
+        Instant updatedAt,
+        List<PropertyMediaResponse> media
 ) {
 }

@@ -21,6 +21,7 @@ public class KycDocument {
     private String documentUrl;
     private ApprovalStatus status;
     private String reviewedByAdminId;
+    private String reviewNote;
     private Instant reviewedAt;
     private Instant createdAt;
     private Instant updatedAt;
@@ -74,6 +75,14 @@ public class KycDocument {
 
     public void setReviewedByAdminId(String reviewedByAdminId) {
         this.reviewedByAdminId = reviewedByAdminId;
+    }
+
+    public String getReviewNote() {
+        return reviewNote;
+    }
+
+    public void setReviewNote(String reviewNote) {
+        this.reviewNote = reviewNote;
     }
 
     public Instant getReviewedAt() {

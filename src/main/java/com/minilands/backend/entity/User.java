@@ -29,6 +29,7 @@ public class User {
     private AccountStatus accountStatus;
     private Instant emailVerifiedAt;
     private Instant kycVerifiedAt;
+    private String kycRejectionNote;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -113,6 +114,14 @@ public class User {
 
     public void setKycVerifiedAt(Instant kycVerifiedAt) {
         this.kycVerifiedAt = kycVerifiedAt;
+    }
+
+    public String getKycRejectionNote() {
+        return kycRejectionNote;
+    }
+
+    public void setKycRejectionNote(String kycRejectionNote) {
+        this.kycRejectionNote = kycRejectionNote;
     }
 
     public Instant getCreatedAt() {

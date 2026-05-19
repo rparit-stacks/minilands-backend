@@ -12,6 +12,7 @@ public record KycDocumentResponse(
         String documentUrl,
         ApprovalStatus status,
         String reviewedByAdminId,
+        String reviewNote,
         Instant reviewedAt,
         Instant createdAt
 ) {

@@ -31,7 +31,12 @@ public class SecurityConfig {
                                 "/api/auth/otp/send",
                                 "/api/auth/otp/verify",
                                 "/api/auth/google",
-                                "/api/auth/refresh").permitAll()
+                                "/api/auth/refresh",
+                                "/api/admin/auth/login",
+                                "/api/admin/auth/refresh").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/kyc/**", "/api/notifications/**", "/api/media/**")
+                        .hasRole("INVESTOR")
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

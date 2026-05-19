@@ -1,4 +1,4 @@
-package com.minilands.backend.security;
+package com.minilands.backend.dto;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

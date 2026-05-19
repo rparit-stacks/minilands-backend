@@ -1,4 +1,4 @@
-package com.minilands.backend.controller;
+package com.minilands.backend.controller.investor;
 
 import com.minilands.backend.dto.auth.AuthResponse;
 import com.minilands.backend.dto.auth.GoogleAuthRequest;
@@ -6,7 +6,7 @@ import com.minilands.backend.dto.auth.MessageResponse;
 import com.minilands.backend.dto.auth.RefreshTokenRequest;
 import com.minilands.backend.dto.auth.SendOtpRequest;
 import com.minilands.backend.dto.auth.VerifyOtpRequest;
-import com.minilands.backend.security.UserPrincipal;
+import com.minilands.backend.dto.UserPrincipal;
 import com.minilands.backend.service.auth.UserAuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;

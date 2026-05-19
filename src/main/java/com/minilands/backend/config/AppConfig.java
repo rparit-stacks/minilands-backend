@@ -7,7 +7,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
-@EnableConfigurationProperties({JwtProperties.class, OtpProperties.class, GoogleProperties.class, CloudinaryProperties.class})
+@EnableConfigurationProperties({
+        JwtProperties.class,
+        OtpProperties.class,
+        GoogleProperties.class,
+        CloudinaryProperties.class,
+        AdminBootstrapProperties.class
+})
 public class AppConfig {
 
     @Bean

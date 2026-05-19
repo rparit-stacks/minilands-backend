@@ -1,4 +1,4 @@
-package com.minilands.backend.controller;
+package com.minilands.backend.controller.investor;
 
 import com.minilands.backend.dto.media.MediaUploadResponse;
 import com.minilands.backend.service.media.MediaStorageService;

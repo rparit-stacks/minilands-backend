@@ -33,9 +33,10 @@ public class SecurityConfig {
                                 "/api/auth/google",
                                 "/api/auth/refresh",
                                 "/api/admin/auth/login",
-                                "/api/admin/auth/refresh").permitAll()
+                                "/api/admin/auth/refresh",
+                                "/api/webhooks/razorpay").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/kyc/**", "/api/notifications/**", "/api/media/**")
+                        .requestMatchers("/api/kyc/**", "/api/notifications/**", "/api/media/**", "/api/wallet/**")
                         .hasRole("INVESTOR")
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())

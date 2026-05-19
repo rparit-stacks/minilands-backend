@@ -6,6 +6,8 @@ public record WalletBalanceResponse(
         String walletId,
         String userId,
         BigDecimal balance,
+        BigDecimal pendingWithdrawals,
+        BigDecimal availableBalance,
         String currency
 ) {
 }

@@ -12,7 +12,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
         OtpProperties.class,
         GoogleProperties.class,
         CloudinaryProperties.class,
-        AdminBootstrapProperties.class
+        AdminBootstrapProperties.class,
+        RazorpayProperties.class,
+        WalletProperties.class
 })
 public class AppConfig {
 

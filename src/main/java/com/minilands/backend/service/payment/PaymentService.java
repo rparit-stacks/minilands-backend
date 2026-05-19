@@ -1,17 +1,24 @@
 package com.minilands.backend.service.payment;
 
-import com.minilands.backend.dto.payment.PaymentOrderResponse;
-import com.minilands.backend.dto.payment.PaymentWebhookRequest;
-
-import java.math.BigDecimal;
+import com.minilands.backend.dto.payment.DepositResponse;
+import com.minilands.backend.dto.payment.InitiateDepositRequest;
+import com.minilands.backend.dto.payment.InitiateDepositResponse;
+import com.minilands.backend.dto.payment.ReportDepositRequest;
 
 /**
- * Razorpay integration: order creation and webhook handling (SRP).
- * Decoupled from {@link com.minilands.backend.service.wallet.WalletService} (DIP).
+ * Deposit flow (matches standard Razorpay diagram):
+ * <ol>
+ *   <li>{@link #initiateDeposit} — order + payment order created on backend</li>
+ *   <li>Frontend — client completes Razorpay Checkout</li>
+ *   <li>{@link #handleWebhook} — Razorpay webhook → confirm + wallet commit / rollback</li>
+ *   <li>{@link #reportDeposit} — optional frontend status sync (same commit/rollback rules)</li>
+ * </ol>
  */
 public interface PaymentService {
 
-    PaymentOrderResponse createOrder(String userId, BigDecimal amount);
+    InitiateDepositResponse initiateDeposit(String userId, InitiateDepositRequest request);
 
-    void handleWebhook(PaymentWebhookRequest request);
+    void handleWebhook(String rawBody, String razorpaySignatureHeader);
+
+    DepositResponse reportDeposit(String userId, ReportDepositRequest request);
 }

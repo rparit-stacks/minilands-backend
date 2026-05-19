@@ -17,7 +17,7 @@ This document explains:
 
 1. **User Authentication Service** - Register, login, verify
 2. **Wallet Management Service** - Balance, deposits, withdrawals
-3. **Razorpay Payment Service** - Handle all payments
+3. **Deposit Payment Service** - Verify & record deposits (Razorpay Checkout on frontend)
 4. **Property Investment Service** - Buy/invest in properties
 5. **ROI Distribution Service** - Monthly ROI calculation and credit
 6. **Property Exit Service** - Handle investor exit from property
@@ -323,7 +323,7 @@ Manages investor wallet balance, deposits, withdrawals, and transaction history.
 - Create wallet for each user (on registration)
 - Track balance (in INR paise)
 - Record all transactions
-- Process deposits (via Razorpay)
+- Confirm deposits (after frontend Razorpay Checkout)
 - Process withdrawals (to bank account)
 - Check sufficient balance before investment
 
@@ -363,129 +363,62 @@ User sees wallet balance in app/dashboard
 
 ---
 
-## Process Flow: Deposit Money (Razorpay)
+## Process Flow: Deposit Money (Frontend Razorpay + Backend Wallet)
 
-### Step 1: User Initiates Deposit
+> **Architecture:** Razorpay Checkout runs on the **frontend** (React/app).  
+> **Backend** does not call Razorpay APIs. It only **verifies the payment signature** and **manages** wallet balance + deposit records.
+
+### Step 1: User Initiates Deposit (Frontend)
 ```
 When: User clicks "Add Money" / "Deposit"
 Action: User enters amount: ₹5,000
 
-System receives: POST /wallet/deposit
-Data:
+Frontend:
+  - Loads Razorpay Checkout.js (key_id from env — never the secret)
+  - Creates order / opens checkout (handled on client with Razorpay)
+```
+
+### Step 2: User Pays via Razorpay Checkout (Frontend)
+```
+Frontend opens Razorpay payment popup
+
+User sees UPI / Card / Netbanking options
+User completes payment
+
+On success, Razorpay returns to frontend handler:
+  - razorpay_order_id
+  - razorpay_payment_id
+  - razorpay_signature
+```
+
+### Step 3: Frontend Confirms with Backend
+```
+POST /api/wallet/deposits/confirm
+Authorization: Bearer {access_token}
+Body:
   {
-    "amount": 5000
+    "amount": 5000,
+    "razorpayOrderId": "order_ILw0jZJjz1AJdL",
+    "razorpayPaymentId": "pay_ILw0yVo2h3l7k",
+    "razorpaySignature": "9ef4dffbfd84f1318f6739a3ce19f9d85851857ae648f114332d8401e0949a3d"
   }
 ```
 
-### Step 2: Service Validates
+### Step 4: Backend Validates
 ```
-Service checks:
+Wallet / Payment service checks:
   ✓ Amount > 0
-  ✓ Amount ≤ 10,00,000 (max limit)
+  ✓ Amount ≤ max limit
   ✓ User KYC approved
   ✓ User account active
+  ✓ Payment not already processed (duplicate payment_id)
 
-If ANY check fails:
-  → Return error: "Cannot deposit. Reason: ..."
-  → Stop
+Security: Verify Razorpay signature (HMAC on backend using key_secret):
+  expected = HMAC_SHA256(order_id + "|" + payment_id, razorpay_key_secret)
+  If invalid → reject (do not credit wallet)
 ```
 
-### Step 3: Service Creates Razorpay Order
-```
-Service calls Razorpay API:
-  
-  POST https://api.razorpay.com/v1/orders
-  Data:
-    {
-      "amount": 5000 * 100,     // Convert ₹ to paise
-      "currency": "INR",
-      "receipt": "deposit_user_123_timestamp"
-    }
-
-Razorpay responds:
-  {
-    "id": "order_ILw0jZJjz1AJdL",
-    "amount": 500000,
-    "status": "created"
-  }
-```
-
-### Step 4: Service Stores Order Details
-```
-Service creates DEPOSITS record:
-  - user_id: 1
-  - amount: 5000
-  - razorpay_order_id: "order_ILw0jZJjz1AJdL"
-  - status: 'initiated'
-  - created_at: NOW
-```
-
-### Step 5: Return Order Details to Frontend
-```
-Response to app/website:
-  {
-    "razorpay_order_id": "order_ILw0jZJjz1AJdL",
-    "amount": 5000,
-    "currency": "INR"
-  }
-
-Frontend sends this to Razorpay checkout
-```
-
-### Step 6: User Opens Razorpay Checkout
-```
-Frontend opens Razorpay payment page
-
-User sees:
-  - Amount: ₹5,000
-  - Payment method options:
-    * UPI (Google Pay, PhonePe, Paytm)
-    * Credit Card
-    * Debit Card
-    * Net Banking
-    * Wallet (Amazon Pay, Mobikwik)
-
-User selects method and enters details
-Razorpay processes payment
-```
-
-### Step 7: Payment Success/Failure
-```
-If Payment Success:
-  Razorpay sends webhook to system:
-    POST /webhook/razorpay-payment
-    Data:
-      {
-        "razorpay_order_id": "order_ILw0jZJjz1AJdL",
-        "razorpay_payment_id": "pay_ILw0yVo2h3l7k",
-        "razorpay_signature": "9ef4dffbfd84f1318f6739a3ce19f9d85851857ae648f114332d8401e0949a3d"
-      }
-
-If Payment Failed:
-  Razorpay returns error
-  User sees "Payment failed. Try again."
-  User can retry
-```
-
-### Step 8: Service Validates Webhook
-```
-Service receives webhook
-
-Security Step: Validate signature
-  Service computes:
-    hash = HMAC_SHA256(order_id + "|" + payment_id, razorpay_secret)
-  
-  If hash != received_signature:
-    → This is NOT from Razorpay
-    → Reject webhook (security risk!)
-    → Stop
-  
-  If hash == received_signature:
-    → This is authentic from Razorpay
-    → Continue
-```
-
-### Step 9: Credit Investor Wallet
+### Step 5: Credit Investor Wallet
 ```
 Service executes transaction:
 
@@ -687,116 +620,75 @@ User sees complete history
 
 ---
 
-# 3️⃣ RAZORPAY PAYMENT SERVICE
+# 3️⃣ DEPOSIT PAYMENT SERVICE (Backend — Manage Only)
 
 ## What It Does
 
-Integrates with Razorpay to handle all payment processing (deposits only, since Investra handles withdrawals to bank).
+Records and verifies deposits after the **frontend** completes Razorpay Checkout.  
+Does **not** host Razorpay UI or call Razorpay REST APIs to create orders.
+
+## Frontend vs Backend
+
+| Layer | Responsibility |
+|-------|----------------|
+| **Frontend** | Razorpay Checkout.js, `key_id`, payment UI, order/payment flow |
+| **Backend** | Verify `razorpay_signature`, save `DEPOSITS`, credit `WALLETS`, `TRANSACTIONS` |
 
 ## Why It's Needed
 
 **Business Requirement:**
-- Accept deposits from investors
-- Support multiple payment methods (UPI, Cards, Wallets)
-- Secure payment processing (PCI DSS compliance)
-- Instant payment verification
+- Persist deposit history (audit / compliance)
+- Credit wallet only after verified payment
+- Block duplicate credits for same `razorpay_payment_id`
 
-**Why Razorpay (Not Others):**
-- Only gateway specified (simplified design)
-- Works in India (INR only)
-- Supports all payment methods
-- Good webhook reliability
-- Developer friendly
-- Competitive pricing
+**Security (backend only):**
+- `key_secret` stays on server — used only for HMAC signature verification
+- Never trust frontend amount alone without signature check
 
 ## Service Responsibility
 
-- Create payment orders
-- Handle webhook callbacks
-- Verify payment signatures
-- Reconcile payments
-- Handle failed payments
+- Verify payment signature (`order_id|payment_id`)
+- Create / update `DEPOSITS` record
+- Credit wallet via Wallet Service
+- Reject invalid or duplicate payments
 
----
+## API (planned)
+
+```
+POST /api/wallet/deposits/confirm   → ConfirmDepositRequest → DepositResponse
+```
 
 ## Process Flow: Payment Lifecycle
 
-### Step 1: Create Order (Already Covered in Wallet Service)
+### Step 1: Frontend — Razorpay Checkout
 ```
-User enters amount → Wallet Service calls Razorpay API → Order created
-```
-
-### Step 2: User Makes Payment
-```
-Frontend opens Razorpay checkout with order_id
-User enters UPI/Card details
-Razorpay processes payment with bank
-Payment confirmed or failed
+User pays → Razorpay success handler returns order_id, payment_id, signature
 ```
 
-### Step 3: Razorpay Sends Webhook
+### Step 2: Frontend → Backend
 ```
-CRITICAL: This is how system knows payment status
-
-Razorpay calls: POST /webhook/razorpay-payment
-Data includes:
-  - razorpay_order_id (which order)
-  - razorpay_payment_id (payment reference)
-  - razorpay_signature (proof it's from Razorpay)
-  - payment_status (success/failed)
-  - amount (how much paid)
+POST /api/wallet/deposits/confirm with payment details
 ```
 
-### Step 4: Service Validates Signature
+### Step 3: Backend — Verify & Credit
 ```
-WHY THIS IS CRITICAL:
-  - Someone could fake a webhook
-  - Could claim payment succeeded when it didn't
-  - Could deposit without paying
-
-Solution: Signature validation
-  Service has: razorpay_secret_key (kept secure)
-  
-  Service computes:
-    expected_signature = HMAC_SHA256(
-      order_id + "|" + payment_id,
-      secret_key
-    )
-  
-  If received_signature == expected_signature:
-    → This is REALLY from Razorpay ✓
-    → Safe to credit wallet
-  
-  Else:
-    → FAKE webhook!
-    → Reject it ✗
-    → Log security alert
-```
-
-### Step 5: Process Based on Status
-```
-If payment_status = 'success':
-  → Wallet Service credits wallet
-  → Mark deposit as 'completed'
-  → Notify user "Deposit successful"
-
-If payment_status = 'failed':
-  → Mark deposit as 'failed'
-  → Notify user "Payment failed. Try again."
-  → No wallet credit
+If signature valid AND KYC approved:
+  → deposit status = PAID
+  → wallet balance += amount
+  → transaction record created
+Else:
+  → 400 error, no wallet credit
 ```
 
 ---
 
-## Why Razorpay Service is Separate
+## Why Payment Logic is Separate from Wallet
 
 | Reason | Explanation |
 |--------|-------------|
-| **Isolation** | If Razorpay fails, rest of system works |
-| **Security** | Dedicated security validations |
-| **Scalability** | Can handle payment spikes |
-| **Compliance** | PCI DSS in one service |
-| **Replacement** | Can swap gateway later without touching other services |
+| **SRP** | Wallet = balance; Payment = verify + deposit records |
+| **Security** | Signature verification isolated |
+| **Testability** | Mock payments without touching wallet rules |
 
 ---
 
@@ -2053,7 +1945,7 @@ Dashboard UI displays (formatted):
 |---------|-------------|-----------|-----------|
 | **User Auth** | Register, login, KYC | Identity verification | JWT tokens, user account |
 | **Wallet** | Store money, track balance | Fund management | Balance, transaction history |
-| **Razorpay** | Process deposits | Secure payments | Payment confirmation, credit |
+| **Deposit Payment** | Verify & record deposits | Audit trail, anti-fraud | Signature check, wallet credit |
 | **Property Investment** | Buy shares, track ownership | Core feature | Share ownership, holdings |
 | **ROI Distribution** | Calculate & credit monthly ROI | Return investor profits | ROI earnings, updated values |
 | **Property Exit** | Allow investor withdrawal | Liquidity | Exit amount credited to wallet |
@@ -2071,7 +1963,7 @@ INVESTOR'S JOURNEY:
    User Auth Service
    ↓
 2. DEPOSIT MONEY
-   Wallet Service + Razorpay Service
+   Wallet Service (frontend Razorpay → backend confirm)
    ↓
 3. BROWSE & BUY SHARES
    Property Investment Service

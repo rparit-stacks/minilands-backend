@@ -11,6 +11,8 @@ public record WithdrawalResponse(
         BigDecimal amount,
         WithdrawalStatus status,
         String bankAccountId,
+        String adminNote,
+        Instant processedAt,
         Instant createdAt
 ) {
 }

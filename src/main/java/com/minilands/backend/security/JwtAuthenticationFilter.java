@@ -40,12 +40,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         String header = request.getHeader("Authorization");
-        if (header == null || !header.startsWith("Bearer ")) {
+        if (header == null || header.isBlank()) {
+            setAuthError(request, "Missing Authorization header. Send: Authorization: Bearer <access-token>");
+            filterChain.doFilter(request, response);
+            return;
+        }
+        if (!header.startsWith("Bearer ")) {
+            setAuthError(request,
+                    "Invalid Authorization format. Use: Authorization: Bearer <access-token>");
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = header.substring(7);
+        String token = header.substring(7).trim();
+        if (token.isEmpty()) {
+            setAuthError(request, "Access token is empty. Send: Authorization: Bearer <access-token>");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
             PrincipalType principalType = jwtService.extractPrincipalType(token);
             jwtService.validateAccessToken(token, principalType);
@@ -56,6 +69,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authenticateAdmin(token, request);
             }
         } catch (AuthException ex) {
+            setAuthError(request, ex.getMessage());
             SecurityContextHolder.clearContext();
         }
 
@@ -91,5 +105,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    private void setAuthError(HttpServletRequest request, String message) {
+        request.setAttribute(SecurityAuthAttributes.AUTH_ERROR_MESSAGE, message);
     }
 }

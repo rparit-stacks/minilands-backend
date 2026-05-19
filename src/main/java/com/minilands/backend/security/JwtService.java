@@ -75,10 +75,12 @@ public class JwtService {
     public void validateAccessToken(String token, PrincipalType expectedPrincipalType) {
         Claims claims = parseToken(token);
         if (!JwtTokenType.ACCESS.name().equals(claims.get("type", String.class))) {
-            throw new AuthException("Invalid access token");
+            throw new AuthException(
+                    "A refresh token was sent where an access token is required. "
+                            + "Use the accessToken field from the login response.");
         }
         if (!expectedPrincipalType.name().equals(claims.get("principalType", String.class))) {
-            throw new AuthException("Invalid token principal");
+            throw new AuthException("Token type does not match the signed-in account.");
         }
     }
 

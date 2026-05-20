@@ -9,9 +9,7 @@ import java.util.Optional;
 
 public interface PropertySaleProposalRepository extends MongoRepository<PropertySaleProposal, String> {
 
-    List<PropertySaleProposal> findByPropertyId(String propertyId);
+    Optional<PropertySaleProposal> findByPropertyId(String propertyId);
 
     List<PropertySaleProposal> findByStatus(ProposalStatus status);
-
-    Optional<PropertySaleProposal> findByPropertyIdAndStatus(String propertyId, ProposalStatus status);
 }

@@ -30,7 +30,9 @@ public class User {
     private Instant emailVerifiedAt;
     private Instant kycVerifiedAt;
     private String kycRejectionNote;
+    private String profilePictureUrl;
     private String oneSignalPlayerId;
+    private boolean onboardingCompleted;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -125,12 +127,28 @@ public class User {
         this.kycRejectionNote = kycRejectionNote;
     }
 
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
+    }
+
     public String getOneSignalPlayerId() {
         return oneSignalPlayerId;
     }
 
     public void setOneSignalPlayerId(String oneSignalPlayerId) {
         this.oneSignalPlayerId = oneSignalPlayerId;
+    }
+
+    public boolean isOnboardingCompleted() {
+        return onboardingCompleted;
+    }
+
+    public void setOnboardingCompleted(boolean onboardingCompleted) {
+        this.onboardingCompleted = onboardingCompleted;
     }
 
     public Instant getCreatedAt() {

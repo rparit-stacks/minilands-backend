@@ -1,6 +1,5 @@
 package com.minilands.backend.service.property.impl;
 
-import com.minilands.backend.config.InvestmentProperties;
 import com.minilands.backend.dto.property.DistributeRentRequest;
 import com.minilands.backend.dto.property.RentDistributionResponse;
 import com.minilands.backend.entity.Property;
@@ -18,6 +17,7 @@ import com.minilands.backend.repository.RoiDistributionRepository;
 import com.minilands.backend.repository.RoiEarningRepository;
 import com.minilands.backend.service.notification.NotificationService;
 import com.minilands.backend.service.property.PropertyRentDistributionService;
+import com.minilands.backend.service.property.SharePriceValuationService;
 import com.minilands.backend.service.wallet.WalletLedgerService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,26 +35,26 @@ public class PropertyRentDistributionServiceImpl implements PropertyRentDistribu
     private final PropertyRepository propertyRepository;
     private final PropertyHoldingRepository holdingRepository;
     private final WalletLedgerService walletLedgerService;
+    private final SharePriceValuationService sharePriceValuationService;
     private final RoiDistributionRepository roiDistributionRepository;
     private final RoiEarningRepository roiEarningRepository;
     private final NotificationService notificationService;
-    private final InvestmentProperties investmentProperties;
 
     public PropertyRentDistributionServiceImpl(
             PropertyRepository propertyRepository,
             PropertyHoldingRepository holdingRepository,
             WalletLedgerService walletLedgerService,
+            SharePriceValuationService sharePriceValuationService,
             RoiDistributionRepository roiDistributionRepository,
             RoiEarningRepository roiEarningRepository,
-            NotificationService notificationService,
-            InvestmentProperties investmentProperties) {
+            NotificationService notificationService) {
         this.propertyRepository = propertyRepository;
         this.holdingRepository = holdingRepository;
         this.walletLedgerService = walletLedgerService;
+        this.sharePriceValuationService = sharePriceValuationService;
         this.roiDistributionRepository = roiDistributionRepository;
         this.roiEarningRepository = roiEarningRepository;
         this.notificationService = notificationService;
-        this.investmentProperties = investmentProperties;
     }
 
     @Override
@@ -70,31 +70,42 @@ public class PropertyRentDistributionServiceImpl implements PropertyRentDistribu
             throw new IllegalArgumentException("monthlyRent must be set on the property or in the request");
         }
 
+        // Priority: request override → property-level fee → global default (10%)
         int feePercent = request.platformFeePercent() != null
                 ? request.platformFeePercent()
-                : investmentProperties.getRentPlatformFeePercent();
+                : property.getRentPlatformFeePercent();
         BigDecimal platformFee = monthlyRent
                 .multiply(BigDecimal.valueOf(feePercent))
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
         BigDecimal distributableRent = monthlyRent.subtract(platformFee);
-
-        Integer totalShares = property.getTotalShares();
-        if (totalShares == null || totalShares < 1) {
-            throw new IllegalStateException("Property totalShares is not configured");
-        }
-        BigDecimal totalSharesBd = BigDecimal.valueOf(totalShares);
 
         List<PropertyHolding> holdings = holdingRepository.findByPropertyIdAndStatus(propertyId, HoldingStatus.ACTIVE);
         if (holdings.isEmpty()) {
             throw new IllegalArgumentException("No active investors for this property");
         }
 
-        YearMonth period = YearMonth.now(ZoneOffset.UTC);
+        YearMonth period = (request.year() != null && request.month() != null)
+                ? YearMonth.of(request.year(), request.month())
+                : YearMonth.now(ZoneOffset.UTC);
         if (roiDistributionRepository
                 .findByPropertyIdAndDistributionYearAndDistributionMonth(
                         propertyId, period.getYear(), period.getMonthValue())
                 .isPresent()) {
             throw new IllegalArgumentException("Rent already distributed for " + period);
+        }
+
+        // Current share price — all holdings valued at same price
+        BigDecimal currentSharePrice = sharePriceValuationService.getEstimatedSharePrice(property);
+
+        // Total current value of all active holdings combined
+        BigDecimal totalPortfolioValue = holdings.stream()
+                .map(h -> h.getSharesOwned() != null
+                        ? h.getSharesOwned().multiply(currentSharePrice)
+                        : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalPortfolioValue.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalStateException("Total portfolio value is zero — cannot distribute");
         }
 
         Instant now = Instant.now();
@@ -103,7 +114,10 @@ public class PropertyRentDistributionServiceImpl implements PropertyRentDistribu
         distribution.setPropertyId(propertyId);
         distribution.setDistributionYear(period.getYear());
         distribution.setDistributionMonth(period.getMonthValue());
-        distribution.setRoiPercentage(null);
+        distribution.setRoiPercentage(distributableRent
+                .divide(totalPortfolioValue, 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(4, RoundingMode.HALF_UP));
         distribution.setTotalDistributed(BigDecimal.ZERO);
         distribution.setStatus(RoiDistributionStatus.COMPLETED);
         distribution.setDistributedAt(now);
@@ -114,22 +128,25 @@ public class PropertyRentDistributionServiceImpl implements PropertyRentDistribu
         int investorsPaid = 0;
 
         for (PropertyHolding holding : holdings) {
-            BigDecimal ownership = holding.getSharesOwned().divide(totalSharesBd, 10, RoundingMode.HALF_UP);
-            BigDecimal payout = distributableRent.multiply(ownership).setScale(2, RoundingMode.HALF_UP);
-            if (payout.compareTo(BigDecimal.ZERO) <= 0) {
-                continue;
-            }
+            BigDecimal holdingValue = holding.getSharesOwned() != null
+                    ? holding.getSharesOwned().multiply(currentSharePrice)
+                    : BigDecimal.ZERO;
+            if (holdingValue.compareTo(BigDecimal.ZERO) <= 0) continue;
+
+            // Payout proportional to current value — not share count
+            BigDecimal ownershipFraction = holdingValue.divide(totalPortfolioValue, 10, RoundingMode.HALF_UP);
+            BigDecimal payout = distributableRent.multiply(ownershipFraction).setScale(2, RoundingMode.HALF_UP);
+            if (payout.compareTo(BigDecimal.ZERO) <= 0) continue;
 
             Wallet wallet = walletLedgerService.requireWallet(holding.getUserId());
             walletLedgerService.credit(
                     wallet,
                     payout,
                     TransactionType.ROI,
-                    "Rental income: " + property.getName(),
+                    "Rental income: " + property.getName() + " (" + period.getMonth().name().substring(0, 3) + " " + period.getYear() + ")",
                     propertyId);
 
-            BigDecimal roiEarned = holding.getRoiEarned() != null ? holding.getRoiEarned() : BigDecimal.ZERO;
-            holding.setRoiEarned(roiEarned.add(payout));
+            holding.setRoiEarned((holding.getRoiEarned() != null ? holding.getRoiEarned() : BigDecimal.ZERO).add(payout));
             holding.setUpdatedAt(now);
             holdingRepository.save(holding);
 
@@ -139,6 +156,7 @@ public class PropertyRentDistributionServiceImpl implements PropertyRentDistribu
             earning.setUserId(holding.getUserId());
             earning.setPropertyId(propertyId);
             earning.setAmount(payout);
+            earning.setRoiPercentage(distribution.getRoiPercentage());
             earning.setEarnedOnDate(now);
             earning.setCreatedAt(now);
             roiEarningRepository.save(earning);
@@ -150,7 +168,8 @@ public class PropertyRentDistributionServiceImpl implements PropertyRentDistribu
                     holding.getUserId(),
                     NotificationType.ROI,
                     "Rental payout received",
-                    "₹" + payout + " from " + property.getName());
+                    "₹" + payout + " credited to your wallet from " + property.getName()
+                            + ". Your holding value: ₹" + holdingValue.setScale(0, RoundingMode.HALF_UP));
         }
 
         distribution.setTotalDistributed(totalDistributed);

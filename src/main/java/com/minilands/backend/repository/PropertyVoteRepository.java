@@ -8,9 +8,11 @@ import java.util.Optional;
 
 public interface PropertyVoteRepository extends MongoRepository<PropertyVote, String> {
 
-    List<PropertyVote> findByProposalId(String proposalId);
+    List<PropertyVote> findByPropertyId(String propertyId);
 
-    Optional<PropertyVote> findByProposalIdAndInvestorId(String proposalId, String investorId);
+    Optional<PropertyVote> findByPropertyIdAndInvestorId(String propertyId, String investorId);
 
-    long countByProposalId(String proposalId);
+    long countByPropertyId(String propertyId);
+
+    void deleteByPropertyIdAndInvestorId(String propertyId, String investorId);
 }

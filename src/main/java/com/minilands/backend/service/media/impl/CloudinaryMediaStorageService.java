@@ -4,6 +4,8 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.minilands.backend.dto.media.MediaUploadResponse;
 import com.minilands.backend.service.media.MediaStorageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,6 +18,8 @@ import java.util.UUID;
 @Service
 public class CloudinaryMediaStorageService implements MediaStorageService {
 
+    private static final Logger log = LoggerFactory.getLogger(CloudinaryMediaStorageService.class);
+
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
             "image/jpeg",
             "image/png",
@@ -23,7 +27,8 @@ public class CloudinaryMediaStorageService implements MediaStorageService {
             "image/gif",
             "application/pdf",
             "video/mp4",
-            "video/webm"
+            "video/webm",
+            "application/octet-stream"  // Android file picker sends this for images
     );
 
     private final Cloudinary cloudinary;
@@ -42,19 +47,28 @@ public class CloudinaryMediaStorageService implements MediaStorageService {
     public MediaUploadResponse upload(MultipartFile file, String folder, String publicId) {
         validateFile(file);
 
+        String resolvedFolder = normalizeFolder(folder);
+        String resolvedPublicId = resolvePublicId(publicId);
+        log.info("[Media] uploading file — name={} contentType={} size={} folder={} publicId={}",
+                file.getOriginalFilename(), file.getContentType(), file.getSize(), resolvedFolder, resolvedPublicId);
+
         try {
-            String resolvedPublicId = resolvePublicId(publicId);
             Map<String, Object> options = ObjectUtils.asMap(
-                    "folder", normalizeFolder(folder),
+                    "folder", resolvedFolder,
                     "public_id", resolvedPublicId,
                     "resource_type", "auto",
                     "overwrite", true);
 
             Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), options);
-            return mapResponse(result);
+            MediaUploadResponse response = mapResponse(result);
+            log.info("[Media] upload success — secureUrl={} format={} bytes={}",
+                    response.secureUrl(), response.format(), response.bytes());
+            return response;
         } catch (IOException ex) {
+            log.error("[Media] failed to read file bytes: {}", ex.getMessage());
             throw new IllegalArgumentException("Failed to read uploaded file", ex);
         } catch (Exception ex) {
+            log.error("[Media] Cloudinary upload failed: {}", ex.getMessage(), ex);
             throw new IllegalArgumentException("Cloudinary upload failed: " + ex.getMessage(), ex);
         }
     }
@@ -64,9 +78,12 @@ public class CloudinaryMediaStorageService implements MediaStorageService {
         if (!StringUtils.hasText(publicId)) {
             throw new IllegalArgumentException("publicId is required");
         }
+        log.info("[Media] deleting publicId={}", publicId);
         try {
             cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            log.info("[Media] delete success — publicId={}", publicId);
         } catch (Exception ex) {
+            log.error("[Media] Cloudinary delete failed: {}", ex.getMessage(), ex);
             throw new IllegalArgumentException("Cloudinary delete failed: " + ex.getMessage(), ex);
         }
     }
@@ -77,6 +94,7 @@ public class CloudinaryMediaStorageService implements MediaStorageService {
         }
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            log.warn("[Media] rejected file — contentType={} originalName={}", contentType, file.getOriginalFilename());
             throw new IllegalArgumentException("Unsupported file type: " + contentType);
         }
     }

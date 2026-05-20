@@ -86,9 +86,18 @@ public class Property {
     private ValuationFrequency valuationFrequency;
     private Instant lastValuationDate;
     private BigDecimal monthlyRent;
+    /** Platform fee % deducted from rent before distributing to investors. Defaults to 10 if null. */
+    private Integer rentPlatformFeePercent;
 
     private Integer currentInvestors;
     private BigDecimal totalRaised;
+
+    /** Admin-configurable threshold (e.g. 70.00 means 70%). Defaults to 70 if null. */
+    private BigDecimal saleThresholdPercent;
+    /** How many active investors have currently opted in to sell. */
+    private Integer saleVoteOptInCount;
+    /** Live percentage of active investors who opted in (saleVoteOptInCount / currentInvestors × 100). */
+    private BigDecimal saleVotePercent;
 
     private String createdByAdminId;
     private Instant createdAt;
@@ -513,6 +522,14 @@ public class Property {
         this.monthlyRent = monthlyRent;
     }
 
+    public Integer getRentPlatformFeePercent() {
+        return rentPlatformFeePercent != null ? rentPlatformFeePercent : 10;
+    }
+
+    public void setRentPlatformFeePercent(Integer rentPlatformFeePercent) {
+        this.rentPlatformFeePercent = rentPlatformFeePercent;
+    }
+
     public Integer getCurrentInvestors() {
         return currentInvestors;
     }
@@ -527,6 +544,30 @@ public class Property {
 
     public void setTotalRaised(BigDecimal totalRaised) {
         this.totalRaised = totalRaised;
+    }
+
+    public BigDecimal getSaleThresholdPercent() {
+        return saleThresholdPercent != null ? saleThresholdPercent : new BigDecimal("70.00");
+    }
+
+    public void setSaleThresholdPercent(BigDecimal saleThresholdPercent) {
+        this.saleThresholdPercent = saleThresholdPercent;
+    }
+
+    public Integer getSaleVoteOptInCount() {
+        return saleVoteOptInCount != null ? saleVoteOptInCount : 0;
+    }
+
+    public void setSaleVoteOptInCount(Integer saleVoteOptInCount) {
+        this.saleVoteOptInCount = saleVoteOptInCount;
+    }
+
+    public BigDecimal getSaleVotePercent() {
+        return saleVotePercent != null ? saleVotePercent : BigDecimal.ZERO;
+    }
+
+    public void setSaleVotePercent(BigDecimal saleVotePercent) {
+        this.saleVotePercent = saleVotePercent;
     }
 
     public String getCreatedByAdminId() {

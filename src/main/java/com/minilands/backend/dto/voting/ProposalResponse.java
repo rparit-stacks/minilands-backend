@@ -7,13 +7,10 @@ import java.time.Instant;
 public record ProposalResponse(
         String id,
         String propertyId,
-        String initiatedBy,
         ProposalStatus status,
-        Instant votingStartDate,
-        Instant votingEndDate,
-        Integer totalVotesNeeded,
-        Integer votesReceived,
-        Integer votesYes,
-        Integer votesNo
+        Instant thresholdReachedAt,
+        String reviewedByAdminId,
+        String adminNote,
+        Instant reviewedAt
 ) {
 }

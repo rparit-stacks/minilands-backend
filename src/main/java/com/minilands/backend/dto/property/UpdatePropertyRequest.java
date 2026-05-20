@@ -7,6 +7,7 @@ import com.minilands.backend.entity.enums.ListingVisibility;
 import com.minilands.backend.entity.enums.PropertyType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 
@@ -40,6 +41,8 @@ public record UpdatePropertyRequest(
         @DecimalMin("0") BigDecimal rentalYieldPercent,
         @DecimalMin("0") BigDecimal expectedIrrPercent,
         @DecimalMin("0") BigDecimal appreciationRatePercent,
+        @DecimalMin("0.01") BigDecimal monthlyRent,
+        @Min(0) @Max(100) Integer rentPlatformFeePercent,
         DistributionFrequency distributionFrequency,
         @Min(1) Integer holdPeriodMonths,
         @Size(max = 200) String developerName,
@@ -62,6 +65,7 @@ public record UpdatePropertyRequest(
         Boolean featured,
         Integer displayOrder,
         Instant fundingDeadline,
-        @Valid List<PropertyMediaItemDto> media
+        @Valid List<PropertyMediaItemDto> media,
+        @DecimalMin("1") BigDecimal saleThresholdPercent
 ) {
 }

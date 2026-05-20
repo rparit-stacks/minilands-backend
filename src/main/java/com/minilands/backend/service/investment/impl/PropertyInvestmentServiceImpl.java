@@ -2,6 +2,8 @@ package com.minilands.backend.service.investment.impl;
 
 import com.minilands.backend.dto.investment.BuySharesRequest;
 import com.minilands.backend.dto.investment.HoldingDetailResponse;
+import com.minilands.backend.dto.investment.PortfolioSummaryResponse;
+import com.minilands.backend.dto.investment.RoiEarningResponse;
 import com.minilands.backend.dto.investment.SellSharesRequest;
 import com.minilands.backend.dto.investment.SharePriceResponse;
 import com.minilands.backend.entity.Property;
@@ -14,6 +16,7 @@ import com.minilands.backend.entity.enums.PropertyStatus;
 import com.minilands.backend.entity.enums.TransactionType;
 import com.minilands.backend.repository.PropertyHoldingRepository;
 import com.minilands.backend.repository.PropertyRepository;
+import com.minilands.backend.repository.RoiEarningRepository;
 import com.minilands.backend.repository.UserRepository;
 import com.minilands.backend.service.investment.PropertyInvestmentService;
 import com.minilands.backend.service.kyc.KycGuard;
@@ -38,6 +41,7 @@ public class PropertyInvestmentServiceImpl implements PropertyInvestmentService 
     private final UserRepository userRepository;
     private final PropertyRepository propertyRepository;
     private final PropertyHoldingRepository holdingRepository;
+    private final RoiEarningRepository roiEarningRepository;
     private final WalletLedgerService walletLedgerService;
     private final SharePriceValuationService sharePriceValuationService;
     private final NotificationService notificationService;
@@ -46,12 +50,14 @@ public class PropertyInvestmentServiceImpl implements PropertyInvestmentService 
             UserRepository userRepository,
             PropertyRepository propertyRepository,
             PropertyHoldingRepository holdingRepository,
+            RoiEarningRepository roiEarningRepository,
             WalletLedgerService walletLedgerService,
             SharePriceValuationService sharePriceValuationService,
             NotificationService notificationService) {
         this.userRepository = userRepository;
         this.propertyRepository = propertyRepository;
         this.holdingRepository = holdingRepository;
+        this.roiEarningRepository = roiEarningRepository;
         this.walletLedgerService = walletLedgerService;
         this.sharePriceValuationService = sharePriceValuationService;
         this.notificationService = notificationService;
@@ -198,6 +204,71 @@ public class PropertyInvestmentServiceImpl implements PropertyInvestmentService 
         Property property = propertyRepository.findById(holding.getPropertyId())
                 .orElseThrow(() -> new IllegalArgumentException("Property not found"));
         return toHoldingDetail(holding, property);
+    }
+
+    @Override
+    public List<RoiEarningResponse> getRoiHistory(String userId, String holdingId) {
+        PropertyHolding holding = holdingRepository.findById(holdingId)
+                .orElseThrow(() -> new IllegalArgumentException("Holding not found"));
+        if (!holding.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("Holding not found");
+        }
+        return roiEarningRepository.findByHoldingId(holdingId).stream()
+                .sorted((a, b) -> {
+                    if (a.getEarnedOnDate() == null) return 1;
+                    if (b.getEarnedOnDate() == null) return -1;
+                    return b.getEarnedOnDate().compareTo(a.getEarnedOnDate());
+                })
+                .map(e -> new RoiEarningResponse(
+                        e.getId(),
+                        e.getRoiDistributionId(),
+                        e.getAmount(),
+                        e.getRoiPercentage(),
+                        e.getEarnedOnDate(),
+                        e.getCreatedAt()))
+                .toList();
+    }
+
+    @Override
+    public PortfolioSummaryResponse getPortfolioSummary(String userId) {
+        List<PropertyHolding> allHoldings = holdingRepository.findByUserId(userId);
+        List<PropertyHolding> active = allHoldings.stream()
+                .filter(h -> h.getStatus() == HoldingStatus.ACTIVE)
+                .toList();
+
+        BigDecimal totalInvested = BigDecimal.ZERO;
+        BigDecimal currentPortfolioValue = BigDecimal.ZERO;
+
+        for (PropertyHolding h : active) {
+            BigDecimal cost = h.getCostBasis() != null ? h.getCostBasis() : BigDecimal.ZERO;
+            totalInvested = totalInvested.add(cost);
+
+            Property property = propertyRepository.findById(h.getPropertyId()).orElse(null);
+            if (property != null && h.getSharesOwned() != null) {
+                BigDecimal price = sharePriceValuationService.getEstimatedSharePrice(property);
+                currentPortfolioValue = currentPortfolioValue.add(
+                        h.getSharesOwned().multiply(price).setScale(2, RoundingMode.HALF_UP));
+            }
+        }
+
+        BigDecimal totalRoiEarned = roiEarningRepository.findByUserIdOrderByEarnedOnDateDesc(userId).stream()
+                .map(e -> e.getAmount() != null ? e.getAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal unrealizedGain = currentPortfolioValue.subtract(totalInvested);
+        BigDecimal unrealizedGainPercent = totalInvested.compareTo(BigDecimal.ZERO) > 0
+                ? unrealizedGain.multiply(BigDecimal.valueOf(100))
+                        .divide(totalInvested, 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        return new PortfolioSummaryResponse(
+                allHoldings.size(),
+                active.size(),
+                totalInvested.setScale(2, RoundingMode.HALF_UP),
+                currentPortfolioValue,
+                totalRoiEarned.setScale(2, RoundingMode.HALF_UP),
+                unrealizedGain.setScale(2, RoundingMode.HALF_UP),
+                unrealizedGainPercent);
     }
 
     @Override

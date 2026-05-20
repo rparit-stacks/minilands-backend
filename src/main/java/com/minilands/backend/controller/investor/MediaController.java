@@ -2,6 +2,8 @@ package com.minilands.backend.controller.investor;
 
 import com.minilands.backend.dto.media.MediaUploadResponse;
 import com.minilands.backend.service.media.MediaStorageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -16,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/media")
 public class MediaController {
 
+    private static final Logger log = LoggerFactory.getLogger(MediaController.class);
+
     private final MediaStorageService mediaStorageService;
 
     public MediaController(MediaStorageService mediaStorageService) {
@@ -27,14 +31,18 @@ public class MediaController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "folder", required = false) String folder,
             @RequestParam(value = "publicId", required = false) String publicId) {
+        log.info("[MediaController] POST /api/media/upload — name={} contentType={} size={} folder={} publicId={}",
+                file.getOriginalFilename(), file.getContentType(), file.getSize(), folder, publicId);
         MediaUploadResponse response = StringUtils.hasText(publicId)
                 ? mediaStorageService.upload(file, folder, publicId)
                 : mediaStorageService.upload(file, folder);
+        log.info("[MediaController] upload complete — secureUrl={}", response.secureUrl());
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping
     public ResponseEntity<Void> delete(@RequestParam("publicId") String publicId) {
+        log.info("[MediaController] DELETE /api/media — publicId={}", publicId);
         mediaStorageService.delete(publicId);
         return ResponseEntity.noContent().build();
     }

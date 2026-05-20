@@ -8,11 +8,13 @@ import com.minilands.backend.dto.property.RentDistributionResponse;
 import com.minilands.backend.dto.property.UpdatePropertyRequest;
 import com.minilands.backend.dto.property.UpdatePropertyStatusRequest;
 import com.minilands.backend.dto.property.UpdatePropertyValuationRequest;
+import com.minilands.backend.dto.property.ValuationLogResponse;
 import com.minilands.backend.entity.enums.PropertyStatus;
 import com.minilands.backend.security.AdminPrincipal;
 import com.minilands.backend.service.property.AdminPropertyCatalogService;
 import com.minilands.backend.service.property.AdminPropertyValuationService;
 import com.minilands.backend.service.property.PropertyRentDistributionService;
+import com.minilands.backend.service.roi.RoiDistributionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,14 +38,17 @@ public class AdminPropertyController {
     private final AdminPropertyCatalogService adminPropertyCatalogService;
     private final AdminPropertyValuationService adminPropertyValuationService;
     private final PropertyRentDistributionService propertyRentDistributionService;
+    private final RoiDistributionService roiDistributionService;
 
     public AdminPropertyController(
             AdminPropertyCatalogService adminPropertyCatalogService,
             AdminPropertyValuationService adminPropertyValuationService,
-            PropertyRentDistributionService propertyRentDistributionService) {
+            PropertyRentDistributionService propertyRentDistributionService,
+            RoiDistributionService roiDistributionService) {
         this.adminPropertyCatalogService = adminPropertyCatalogService;
         this.adminPropertyValuationService = adminPropertyValuationService;
         this.propertyRentDistributionService = propertyRentDistributionService;
+        this.roiDistributionService = roiDistributionService;
     }
 
     @PostMapping
@@ -89,7 +94,14 @@ public class AdminPropertyController {
             @AuthenticationPrincipal AdminPrincipal principal,
             @PathVariable String propertyId,
             @Valid @RequestBody UpdatePropertyValuationRequest request) {
-        return ResponseEntity.ok(adminPropertyValuationService.updateValuation(propertyId, request));
+        return ResponseEntity.ok(adminPropertyValuationService.updateValuation(principal.getAdminId(), propertyId, request));
+    }
+
+    @GetMapping("/{propertyId}/valuation/history")
+    public ResponseEntity<java.util.List<ValuationLogResponse>> getValuationHistory(
+            @AuthenticationPrincipal AdminPrincipal principal,
+            @PathVariable String propertyId) {
+        return ResponseEntity.ok(adminPropertyValuationService.getValuationHistory(propertyId));
     }
 
     @PostMapping("/{propertyId}/rent/distribute")
@@ -97,7 +109,18 @@ public class AdminPropertyController {
             @AuthenticationPrincipal AdminPrincipal principal,
             @PathVariable String propertyId,
             @Valid @RequestBody(required = false) DistributeRentRequest request) {
-        DistributeRentRequest body = request != null ? request : new DistributeRentRequest(null, null);
+        DistributeRentRequest body = request != null ? request : new DistributeRentRequest(null, null, null, null);
         return ResponseEntity.ok(propertyRentDistributionService.distributeRent(propertyId, body));
+    }
+
+    /**
+     * Manually run the full monthly ROI distribution job for all ACTIVE properties.
+     * Useful for testing or catching up after a scheduler miss.
+     */
+    @PostMapping("/roi/run-distribution")
+    public ResponseEntity<Void> runDistributionNow(
+            @AuthenticationPrincipal AdminPrincipal principal) {
+        roiDistributionService.runMonthlyDistribution();
+        return ResponseEntity.ok().build();
     }
 }

@@ -11,6 +11,8 @@ import com.minilands.backend.dto.wallet.WithdrawalResponse;
 import com.minilands.backend.dto.UserPrincipal;
 import com.minilands.backend.service.wallet.WalletService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +27,8 @@ import java.util.List;
 @RequestMapping("/api/wallet")
 public class WalletController {
 
+    private static final Logger log = LoggerFactory.getLogger(WalletController.class);
+
     private final WalletService walletService;
 
     public WalletController(WalletService walletService) {
@@ -34,7 +38,10 @@ public class WalletController {
     @GetMapping("/balance")
     public ResponseEntity<WalletBalanceResponse> getBalance(
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(walletService.getBalance(principal.getUserId()));
+        log.info("[WalletController] GET /api/wallet/balance — userId={}", principal.getUserId());
+        WalletBalanceResponse response = walletService.getBalance(principal.getUserId());
+        log.info("[WalletController] balance ok — available={} pending={}", response.availableBalance(), response.pendingWithdrawals());
+        return ResponseEntity.ok(response);
     }
 
     /** Step 1–2: create deposit order + Razorpay payment order (frontend opens Checkout next). */
@@ -69,6 +76,9 @@ public class WalletController {
     @GetMapping("/transactions")
     public ResponseEntity<List<TransactionResponse>> getTransactions(
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(walletService.getTransactionHistory(principal.getUserId()));
+        log.info("[WalletController] GET /api/wallet/transactions — userId={}", principal.getUserId());
+        List<TransactionResponse> txns = walletService.getTransactionHistory(principal.getUserId());
+        log.info("[WalletController] transactions ok — count={}", txns.size());
+        return ResponseEntity.ok(txns);
     }
 }

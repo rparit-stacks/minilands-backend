@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.HexFormat;
 
 @Component
@@ -23,7 +24,11 @@ public class RazorpaySignatureVerifier {
         if (secret == null || secret.isBlank()) {
             throw new IllegalStateException("Razorpay key secret is not configured");
         }
-        return hmacSha256Hex(orderId + "|" + paymentId, secret).equals(signature);
+        if (signature == null || signature.isBlank()) {
+            return false;
+        }
+        String expected = hmacSha256Hex(orderId + "|" + paymentId, secret);
+        return constantTimeHexEquals(expected, signature);
     }
 
     /** Webhook: HMAC(raw request body). */
@@ -35,7 +40,19 @@ public class RazorpaySignatureVerifier {
         if (secret == null || secret.isBlank()) {
             throw new IllegalStateException("Razorpay webhook secret is not configured");
         }
-        return hmacSha256Hex(rawBody, secret).equals(signatureHeader);
+        String expected = hmacSha256Hex(rawBody, secret);
+        return constantTimeHexEquals(expected, signatureHeader);
+    }
+
+    /** Compares two lowercase hex strings in constant time (mitigates timing leaks). */
+    private static boolean constantTimeHexEquals(String expectedHex, String actualHex) {
+        try {
+            byte[] a = HexFormat.of().parseHex(expectedHex.toLowerCase());
+            byte[] b = HexFormat.of().parseHex(actualHex.trim().toLowerCase());
+            return MessageDigest.isEqual(a, b);
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
     }
 
     private static String hmacSha256Hex(String data, String secret) {

@@ -10,6 +10,8 @@ import com.minilands.backend.entity.enums.NotificationType;
 import com.minilands.backend.repository.NotificationRepository;
 import com.minilands.backend.repository.UserRepository;
 import com.minilands.backend.service.notification.NotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,8 @@ import java.util.List;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
+
+    private static final Logger log = LoggerFactory.getLogger(NotificationServiceImpl.class);
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
@@ -61,8 +65,11 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void send(String userId, NotificationType type, String title, String message) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            log.warn("Notification skipped — no user for userId={}", userId);
+            return;
+        }
 
         if (notificationProperties.isInAppEnabled()) {
             persistInApp(userId, type, title, message);

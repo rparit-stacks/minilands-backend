@@ -1,6 +1,7 @@
 package com.minilands.backend.controller;
 
 import com.minilands.backend.service.payment.PaymentService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,8 +25,15 @@ public class RazorpayWebhookController {
     @PostMapping
     public ResponseEntity<Void> handleWebhook(
             @RequestBody String rawBody,
-            @RequestHeader("X-Razorpay-Signature") String signature) {
-        paymentService.handleWebhook(rawBody, signature);
-        return ResponseEntity.ok().build();
+            @RequestHeader(value = "X-Razorpay-Signature", required = false) String signature) {
+        if (signature == null || signature.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        try {
+            paymentService.handleWebhook(rawBody, signature);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
     }
 }

@@ -26,8 +26,12 @@ public class RazorpayProperties {
         this.keySecret = keySecret;
     }
 
+    /**
+     * Secret used to verify {@code X-Razorpay-Signature} on webhook POST bodies.
+     * Must match the webhook signing secret from the Razorpay dashboard — not the API key secret.
+     */
     public String getWebhookSecret() {
-        return webhookSecret != null && !webhookSecret.isBlank() ? webhookSecret : keySecret;
+        return webhookSecret;
     }
 
     public void setWebhookSecret(String webhookSecret) {

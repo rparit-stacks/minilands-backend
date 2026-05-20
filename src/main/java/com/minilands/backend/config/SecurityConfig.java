@@ -39,6 +39,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/auth/otp/send",
                                 "/api/auth/otp/verify",
@@ -49,7 +50,8 @@ public class SecurityConfig {
                                 "/api/webhooks/razorpay").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/kyc/**", "/api/notifications/**", "/api/media/**", "/api/wallet/**",
-                                "/api/properties/**", "/api/investments/**", "/api/dashboard/**")
+                                "/api/properties/**", "/api/investments/**", "/api/dashboard/**",
+                                "/api/voting/**", "/api/marketplace/**", "/api/exit/**", "/api/profile/**")
                         .hasRole("INVESTOR")
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())

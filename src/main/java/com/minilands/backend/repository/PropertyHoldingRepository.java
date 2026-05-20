@@ -18,4 +18,6 @@ public interface PropertyHoldingRepository extends MongoRepository<PropertyHoldi
     List<PropertyHolding> findByUserIdAndStatus(String userId, HoldingStatus status);
 
     List<PropertyHolding> findByPropertyIdAndStatus(String propertyId, HoldingStatus status);
+
+    long countByStatus(HoldingStatus status);
 }

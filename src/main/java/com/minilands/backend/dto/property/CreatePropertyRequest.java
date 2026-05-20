@@ -8,6 +8,7 @@ import com.minilands.backend.entity.enums.PropertyStatus;
 import com.minilands.backend.entity.enums.PropertyType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -39,6 +40,8 @@ public record CreatePropertyRequest(
         @DecimalMin("0") BigDecimal rentalYieldPercent,
         @DecimalMin("0") BigDecimal expectedIrrPercent,
         @DecimalMin("0") BigDecimal appreciationRatePercent,
+        @DecimalMin("0.01") BigDecimal monthlyRent,
+        @Min(0) @Max(100) Integer rentPlatformFeePercent,
         DistributionFrequency distributionFrequency,
         @Min(1) Integer holdPeriodMonths,
         @Size(max = 200) String developerName,
@@ -62,6 +65,8 @@ public record CreatePropertyRequest(
         Boolean featured,
         Integer displayOrder,
         Instant fundingDeadline,
-        @Valid List<PropertyMediaItemDto> media
+        @Valid List<PropertyMediaItemDto> media,
+        /** Minimum % of investors that must opt-in to sell before admin approval is triggered. Defaults to 70 if omitted. */
+        @DecimalMin("1") BigDecimal saleThresholdPercent
 ) {
 }

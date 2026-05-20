@@ -156,6 +156,12 @@ public class AdminPropertyCatalogServiceImpl implements AdminPropertyCatalogServ
         if (request.appreciationRatePercent() != null) {
             property.setAppreciationRatePercent(request.appreciationRatePercent());
         }
+        if (request.monthlyRent() != null) {
+            property.setMonthlyRent(request.monthlyRent());
+        }
+        if (request.rentPlatformFeePercent() != null) {
+            property.setRentPlatformFeePercent(request.rentPlatformFeePercent());
+        }
         if (request.distributionFrequency() != null) {
             property.setDistributionFrequency(request.distributionFrequency());
         }
@@ -223,6 +229,9 @@ public class AdminPropertyCatalogServiceImpl implements AdminPropertyCatalogServ
         }
         if (request.fundingDeadline() != null) {
             property.setFundingDeadline(request.fundingDeadline());
+        }
+        if (request.saleThresholdPercent() != null) {
+            property.setSaleThresholdPercent(request.saleThresholdPercent());
         }
 
         Instant now = Instant.now();
@@ -301,6 +310,10 @@ public class AdminPropertyCatalogServiceImpl implements AdminPropertyCatalogServ
         property.setRentalYieldPercent(request.rentalYieldPercent());
         property.setExpectedIrrPercent(request.expectedIrrPercent());
         property.setAppreciationRatePercent(request.appreciationRatePercent());
+        property.setMonthlyRent(request.monthlyRent());
+        if (request.rentPlatformFeePercent() != null) {
+            property.setRentPlatformFeePercent(request.rentPlatformFeePercent());
+        }
         property.setDistributionFrequency(request.distributionFrequency());
         property.setHoldPeriodMonths(request.holdPeriodMonths());
         property.setDeveloperName(request.developerName());
@@ -322,6 +335,9 @@ public class AdminPropertyCatalogServiceImpl implements AdminPropertyCatalogServ
                 ? request.documents().stream().map(propertyMapper::toDocumentEntity).toList()
                 : new ArrayList<>());
         property.setFundingDeadline(request.fundingDeadline());
+        if (request.saleThresholdPercent() != null) {
+            property.setSaleThresholdPercent(request.saleThresholdPercent());
+        }
     }
 
     private void replaceMedia(String propertyId, List<PropertyMediaItemDto> mediaItems, Instant now) {

@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AdminWithdrawalServiceImpl implements AdminWithdrawalService {
@@ -40,10 +41,20 @@ public class AdminWithdrawalServiceImpl implements AdminWithdrawalService {
     }
 
     @Override
-    public List<WithdrawalResponse> listPendingWithdrawals() {
-        return withdrawalRepository.findByStatus(WithdrawalStatus.PENDING).stream()
-                .map(WalletSupport::toWithdrawalResponse)
-                .toList();
+    public List<WithdrawalResponse> listWithdrawals(WithdrawalStatus status) {
+        List<Withdrawal> results = status != null
+                ? withdrawalRepository.findByStatus(status)
+                : withdrawalRepository.findAll().stream()
+                        .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                        .collect(Collectors.toList());
+        return results.stream().map(WalletSupport::toWithdrawalResponse).toList();
+    }
+
+    @Override
+    public WithdrawalResponse getById(String withdrawalId) {
+        Withdrawal withdrawal = withdrawalRepository.findById(withdrawalId)
+                .orElseThrow(() -> new IllegalArgumentException("Withdrawal not found"));
+        return WalletSupport.toWithdrawalResponse(withdrawal);
     }
 
     @Override

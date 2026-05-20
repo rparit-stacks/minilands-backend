@@ -1,19 +1,16 @@
 package com.minilands.backend.service.voting;
 
-import com.minilands.backend.dto.voting.ProposalResponse;
-import com.minilands.backend.dto.voting.VoteRequest;
-import com.minilands.backend.dto.voting.VoteResponse;
+import com.minilands.backend.dto.voting.SaleVoteStatusResponse;
 
 /**
- * Property sale proposals and 70% vote mechanism (SRP).
+ * Investors opt in/out of selling a property at any time.
+ * When opt-in % crosses the admin-configured threshold, admins are notified for final approval.
  */
 public interface PropertyVotingService {
 
-    ProposalResponse initiateSale(String userId, String propertyId);
+    SaleVoteStatusResponse optIn(String userId, String propertyId);
 
-    VoteResponse castVote(String userId, String proposalId, VoteRequest request);
+    SaleVoteStatusResponse optOut(String userId, String propertyId);
 
-    ProposalResponse getProposal(String proposalId);
-
-    void finalizeVoting(String proposalId);
+    SaleVoteStatusResponse getStatus(String userId, String propertyId);
 }

@@ -16,4 +16,8 @@ public interface UserRepository extends MongoRepository<User, String> {
     Optional<User> findByGoogleId(String googleId);
 
     List<User> findByKycStatus(KycStatus kycStatus);
+
+    List<User> findByAccountStatus(com.minilands.backend.entity.enums.AccountStatus accountStatus);
+
+    long countByAccountStatus(com.minilands.backend.entity.enums.AccountStatus accountStatus);
 }

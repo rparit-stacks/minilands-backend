@@ -3,6 +3,8 @@ package com.minilands.backend.controller.investor;
 import com.minilands.backend.dto.UserPrincipal;
 import com.minilands.backend.dto.investment.BuySharesRequest;
 import com.minilands.backend.dto.investment.HoldingDetailResponse;
+import com.minilands.backend.dto.investment.PortfolioSummaryResponse;
+import com.minilands.backend.dto.investment.RoiEarningResponse;
 import com.minilands.backend.dto.investment.SellSharesRequest;
 import com.minilands.backend.dto.investment.SharePriceResponse;
 import com.minilands.backend.service.investment.PropertyInvestmentService;
@@ -26,6 +28,12 @@ public class InvestmentController {
 
     public InvestmentController(PropertyInvestmentService propertyInvestmentService) {
         this.propertyInvestmentService = propertyInvestmentService;
+    }
+
+    @GetMapping("/portfolio/summary")
+    public ResponseEntity<PortfolioSummaryResponse> getPortfolioSummary(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(propertyInvestmentService.getPortfolioSummary(principal.getUserId()));
     }
 
     @GetMapping("/properties/{propertyId}/share-price")
@@ -58,5 +66,12 @@ public class InvestmentController {
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable String holdingId) {
         return ResponseEntity.ok(propertyInvestmentService.getHolding(principal.getUserId(), holdingId));
+    }
+
+    @GetMapping("/holdings/{holdingId}/roi-history")
+    public ResponseEntity<List<RoiEarningResponse>> getRoiHistory(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable String holdingId) {
+        return ResponseEntity.ok(propertyInvestmentService.getRoiHistory(principal.getUserId(), holdingId));
     }
 }

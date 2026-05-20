@@ -115,6 +115,11 @@ public class AdminKycServiceImpl implements AdminKycService {
         user.setKycVerifiedAt(now);
         user.setKycRejectionNote(null);
         user.setUpdatedAt(now);
+        // Mark onboarding complete when KYC is approved and basic profile exists.
+        if (org.springframework.util.StringUtils.hasText(user.getName())
+                && org.springframework.util.StringUtils.hasText(user.getPhone())) {
+            user.setOnboardingCompleted(true);
+        }
         userRepository.save(user);
 
         notificationService.send(
@@ -144,6 +149,7 @@ public class AdminKycServiceImpl implements AdminKycService {
         user.setKycStatus(KycStatus.REJECTED);
         user.setKycRejectionNote(note);
         user.setKycVerifiedAt(null);
+        user.setOnboardingCompleted(false);
         user.setUpdatedAt(now);
         userRepository.save(user);
 

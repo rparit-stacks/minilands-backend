@@ -12,6 +12,7 @@ public record TransactionResponse(
         BigDecimal amount,
         TransactionStatus status,
         String description,
-        Instant createdAt
+        Instant createdAt,
+        String referenceId
 ) {
 }

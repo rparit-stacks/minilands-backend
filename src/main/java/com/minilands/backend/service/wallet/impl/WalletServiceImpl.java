@@ -5,6 +5,7 @@ import com.minilands.backend.dto.payment.DepositResponse;
 import com.minilands.backend.dto.payment.InitiateDepositRequest;
 import com.minilands.backend.dto.payment.InitiateDepositResponse;
 import com.minilands.backend.dto.payment.ReportDepositRequest;
+import com.minilands.backend.dto.wallet.TransactionMapper;
 import com.minilands.backend.dto.wallet.TransactionResponse;
 import com.minilands.backend.dto.wallet.WalletBalanceResponse;
 import com.minilands.backend.dto.wallet.WithdrawalRequest;
@@ -145,7 +146,7 @@ public class WalletServiceImpl implements WalletService {
     public List<TransactionResponse> getTransactionHistory(String userId) {
         WalletSupport.requireWallet(walletRepository, userId);
         return transactionRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .map(WalletSupport::toTransactionResponse)
+                .map(TransactionMapper::toResponse)
                 .toList();
     }
 

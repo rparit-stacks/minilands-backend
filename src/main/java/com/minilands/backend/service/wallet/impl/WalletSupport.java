@@ -1,6 +1,7 @@
 package com.minilands.backend.service.wallet.impl;
 
 import com.minilands.backend.dto.wallet.BankAccountResponse;
+import com.minilands.backend.dto.wallet.TransactionMapper;
 import com.minilands.backend.dto.wallet.TransactionResponse;
 import com.minilands.backend.dto.wallet.WithdrawalResponse;
 import com.minilands.backend.entity.BankAccount;
@@ -32,13 +33,7 @@ final class WalletSupport {
     }
 
     static TransactionResponse toTransactionResponse(Transaction transaction) {
-        return new TransactionResponse(
-                transaction.getId(),
-                transaction.getType(),
-                transaction.getAmount(),
-                transaction.getStatus(),
-                transaction.getDescription(),
-                transaction.getCreatedAt());
+        return TransactionMapper.toResponse(transaction);
     }
 
     static WithdrawalResponse toWithdrawalResponse(Withdrawal withdrawal) {

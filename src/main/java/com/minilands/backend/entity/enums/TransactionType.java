@@ -6,5 +6,9 @@ public enum TransactionType {
     INVESTMENT,
     SALE,
     ROI,
-    EXIT
+    EXIT,
+    /** Manual credit by admin (ledger + transaction row). */
+    ADMIN_CREDIT,
+    /** Manual debit by admin (ledger + transaction row). */
+    ADMIN_DEBIT
 }

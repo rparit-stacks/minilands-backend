@@ -9,19 +9,16 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 
 /**
- * estimatedSharePrice = baseSharePrice + (baseSharePrice × dailyGrowthRate × daysPassed)
- * where baseSharePrice = totalValue / totalShares,
- * dailyGrowthRate = annualROI / 365 / 100.
+ * Investor share value follows the latest building valuation: one share = total property value ÷ total shares.
+ * No separate manual “growth bump” on top — admin valuation updates drive per-share value; annual % ROI is
+ * derived when valuation is saved (see {@link com.minilands.backend.service.property.impl.AdminPropertyValuationServiceImpl}).
  */
 @Service
 public class SharePriceValuationService {
 
     private static final int PRICE_SCALE = 4;
-    private static final BigDecimal HUNDRED = new BigDecimal("100");
-    private static final BigDecimal DAYS_PER_YEAR = new BigDecimal("365");
 
     public BigDecimal getBaseSharePrice(Property property) {
         BigDecimal totalValue = property.getTotalValue();
@@ -32,40 +29,14 @@ public class SharePriceValuationService {
         return totalValue.divide(BigDecimal.valueOf(totalShares), PRICE_SCALE, RoundingMode.HALF_UP);
     }
 
+    /** Per-share value from latest valuation (totalValue ÷ totalShares). */
     public BigDecimal getEstimatedSharePrice(Property property) {
-        return getEstimatedSharePrice(property, Instant.now());
+        return getBaseSharePrice(property).setScale(2, RoundingMode.HALF_UP);
     }
 
+    /** Same as {@link #getEstimatedSharePrice(Property)} — kept for call sites that pass an instant. */
     public BigDecimal getEstimatedSharePrice(Property property, Instant asOf) {
-        BigDecimal baseSharePrice = getBaseSharePrice(property);
-        BigDecimal annualRoi = property.getAnnualRoi();
-        if (annualRoi == null || annualRoi.compareTo(BigDecimal.ZERO) <= 0) {
-            return baseSharePrice.setScale(2, RoundingMode.HALF_UP);
-        }
-
-        Instant valuationAnchor = property.getLastValuationDate() != null
-                ? property.getLastValuationDate()
-                : property.getCreatedAt();
-        if (valuationAnchor == null) {
-            valuationAnchor = asOf;
-        }
-
-        long daysPassed = ChronoUnit.DAYS.between(
-                valuationAnchor.atZone(ZoneOffset.UTC).toLocalDate(),
-                asOf.atZone(ZoneOffset.UTC).toLocalDate());
-        if (daysPassed < 0) {
-            daysPassed = 0;
-        }
-
-        BigDecimal dailyGrowthRate = annualRoi
-                .divide(DAYS_PER_YEAR, 10, RoundingMode.HALF_UP)
-                .divide(HUNDRED, 10, RoundingMode.HALF_UP);
-
-        BigDecimal growthComponent = baseSharePrice
-                .multiply(dailyGrowthRate)
-                .multiply(BigDecimal.valueOf(daysPassed));
-
-        return baseSharePrice.add(growthComponent).setScale(2, RoundingMode.HALF_UP);
+        return getEstimatedSharePrice(property);
     }
 
     public LocalDate getNextValuationDate(Property property) {

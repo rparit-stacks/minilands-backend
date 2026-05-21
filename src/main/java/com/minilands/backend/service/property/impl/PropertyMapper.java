@@ -7,17 +7,26 @@ import com.minilands.backend.dto.property.PropertyMediaResponse;
 import com.minilands.backend.dto.property.PropertySummaryResponse;
 import com.minilands.backend.entity.Property;
 import com.minilands.backend.entity.PropertyMedia;
+import com.minilands.backend.entity.RoiDistribution;
 import com.minilands.backend.entity.embeddable.PropertyDocumentRef;
 import com.minilands.backend.entity.embeddable.PropertyLocation;
 import com.minilands.backend.entity.enums.PropertyStatus;
+import com.minilands.backend.repository.RoiDistributionRepository;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.List;
 
 @Component
 public class PropertyMapper {
+
+    private final RoiDistributionRepository roiDistributionRepository;
+
+    public PropertyMapper(RoiDistributionRepository roiDistributionRepository) {
+        this.roiDistributionRepository = roiDistributionRepository;
+    }
 
     public PropertySummaryResponse toSummary(Property property, String primaryImageUrl) {
         return new PropertySummaryResponse(
@@ -49,10 +58,22 @@ public class PropertyMapper {
                 sharesRemaining(property),
                 isFundingOpen(property),
                 property.getFundingDeadline(),
-                property.getPublishedAt());
+                property.getPublishedAt(),
+                property.getRentalYieldPercent(),
+                property.getMonthlyRent(),
+                property.getRentPlatformFeePercent(),
+                property.getDistributionFrequency(),
+                property.getLastMonthlyPaymentDistributedAt());
     }
 
     public PropertyDetailResponse toDetail(Property property, List<PropertyMedia> media) {
+        Instant lastRentDistributedAt = roiDistributionRepository
+                .findByPropertyIdOrderByCreatedAtDesc(property.getId())
+                .stream()
+                .findFirst()
+                .map(RoiDistribution::getDistributedAt)
+                .orElse(null);
+
         return new PropertyDetailResponse(
                 property.getId(),
                 property.getSlug(),
@@ -114,7 +135,10 @@ public class PropertyMapper {
                 property.getPublishedAt(),
                 property.getCreatedAt(),
                 property.getUpdatedAt(),
-                media.stream().map(this::toMediaResponse).toList());
+                media.stream().map(this::toMediaResponse).toList(),
+                property.getTotalValue(),
+                lastRentDistributedAt,
+                property.getLastMonthlyPaymentDistributedAt());
     }
 
     public PropertyLocation toLocationEntity(PropertyLocationDto dto) {

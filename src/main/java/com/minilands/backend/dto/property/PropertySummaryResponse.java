@@ -1,5 +1,6 @@
 package com.minilands.backend.dto.property;
 
+import com.minilands.backend.entity.enums.DistributionFrequency;
 import com.minilands.backend.entity.enums.PropertyStatus;
 import com.minilands.backend.entity.enums.PropertyType;
 
@@ -35,6 +36,11 @@ public record PropertySummaryResponse(
         BigDecimal sharesRemaining,
         boolean fundingOpen,
         Instant fundingDeadline,
-        Instant publishedAt
+        Instant publishedAt,
+        BigDecimal rentalYieldPercent,
+        BigDecimal monthlyRent,
+        Integer rentPlatformFeePercent,
+        DistributionFrequency distributionFrequency,
+        Instant lastMonthlyPaymentDistributedAt
 ) {
 }

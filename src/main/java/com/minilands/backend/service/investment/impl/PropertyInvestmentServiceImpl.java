@@ -222,6 +222,7 @@ public class PropertyInvestmentServiceImpl implements PropertyInvestmentService 
                 .map(e -> new RoiEarningResponse(
                         e.getId(),
                         e.getRoiDistributionId(),
+                        e.getMonthlyPaymentRunId(),
                         e.getAmount(),
                         e.getRoiPercentage(),
                         e.getEarnedOnDate(),

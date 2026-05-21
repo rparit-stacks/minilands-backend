@@ -12,4 +12,6 @@ public interface RoiDistributionRepository extends MongoRepository<RoiDistributi
 
     Optional<RoiDistribution> findByPropertyIdAndDistributionYearAndDistributionMonth(
             String propertyId, Integer distributionYear, Integer distributionMonth);
+
+    Optional<RoiDistribution> findFirstByPropertyIdOrderByDistributionYearDescDistributionMonthDesc(String propertyId);
 }

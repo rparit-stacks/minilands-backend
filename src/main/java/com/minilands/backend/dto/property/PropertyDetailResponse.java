@@ -72,6 +72,9 @@ public record PropertyDetailResponse(
         Instant publishedAt,
         Instant createdAt,
         Instant updatedAt,
-        List<PropertyMediaResponse> media
+        List<PropertyMediaResponse> media,
+        BigDecimal totalValue,
+        Instant lastRentDistributedAt,
+        Instant lastMonthlyPaymentDistributedAt
 ) {
 }

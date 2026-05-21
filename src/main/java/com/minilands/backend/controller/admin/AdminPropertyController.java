@@ -1,10 +1,12 @@
 package com.minilands.backend.controller.admin;
 
 import com.minilands.backend.dto.property.CreatePropertyRequest;
-import com.minilands.backend.dto.property.DistributeRentRequest;
+import com.minilands.backend.dto.property.MonthlyPaymentDistributionResponse;
+import com.minilands.backend.dto.property.MonthlyPaymentExecuteRequest;
+import com.minilands.backend.dto.property.MonthlyPaymentHistoryItem;
+import com.minilands.backend.dto.property.MonthlyPaymentPreviewResponse;
 import com.minilands.backend.dto.property.PropertyDetailResponse;
 import com.minilands.backend.dto.property.PropertySummaryResponse;
-import com.minilands.backend.dto.property.RentDistributionResponse;
 import com.minilands.backend.dto.property.UpdatePropertyRequest;
 import com.minilands.backend.dto.property.UpdatePropertyStatusRequest;
 import com.minilands.backend.dto.property.UpdatePropertyValuationRequest;
@@ -13,7 +15,7 @@ import com.minilands.backend.entity.enums.PropertyStatus;
 import com.minilands.backend.security.AdminPrincipal;
 import com.minilands.backend.service.property.AdminPropertyCatalogService;
 import com.minilands.backend.service.property.AdminPropertyValuationService;
-import com.minilands.backend.service.property.PropertyRentDistributionService;
+import com.minilands.backend.service.property.MonthlyPaymentDistributionService;
 import com.minilands.backend.service.roi.RoiDistributionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -37,17 +39,17 @@ public class AdminPropertyController {
 
     private final AdminPropertyCatalogService adminPropertyCatalogService;
     private final AdminPropertyValuationService adminPropertyValuationService;
-    private final PropertyRentDistributionService propertyRentDistributionService;
+    private final MonthlyPaymentDistributionService monthlyPaymentDistributionService;
     private final RoiDistributionService roiDistributionService;
 
     public AdminPropertyController(
             AdminPropertyCatalogService adminPropertyCatalogService,
             AdminPropertyValuationService adminPropertyValuationService,
-            PropertyRentDistributionService propertyRentDistributionService,
+            MonthlyPaymentDistributionService monthlyPaymentDistributionService,
             RoiDistributionService roiDistributionService) {
         this.adminPropertyCatalogService = adminPropertyCatalogService;
         this.adminPropertyValuationService = adminPropertyValuationService;
-        this.propertyRentDistributionService = propertyRentDistributionService;
+        this.monthlyPaymentDistributionService = monthlyPaymentDistributionService;
         this.roiDistributionService = roiDistributionService;
     }
 
@@ -98,25 +100,35 @@ public class AdminPropertyController {
     }
 
     @GetMapping("/{propertyId}/valuation/history")
-    public ResponseEntity<java.util.List<ValuationLogResponse>> getValuationHistory(
+    public ResponseEntity<List<ValuationLogResponse>> getValuationHistory(
             @AuthenticationPrincipal AdminPrincipal principal,
             @PathVariable String propertyId) {
         return ResponseEntity.ok(adminPropertyValuationService.getValuationHistory(propertyId));
     }
 
-    @PostMapping("/{propertyId}/rent/distribute")
-    public ResponseEntity<RentDistributionResponse> distributeRent(
+    @GetMapping("/{propertyId}/monthly-payment/preview")
+    public ResponseEntity<MonthlyPaymentPreviewResponse> previewMonthlyPayment(
             @AuthenticationPrincipal AdminPrincipal principal,
-            @PathVariable String propertyId,
-            @Valid @RequestBody(required = false) DistributeRentRequest request) {
-        DistributeRentRequest body = request != null ? request : new DistributeRentRequest(null, null, null, null);
-        return ResponseEntity.ok(propertyRentDistributionService.distributeRent(propertyId, body));
+            @PathVariable String propertyId) {
+        return ResponseEntity.ok(monthlyPaymentDistributionService.preview(propertyId));
     }
 
-    /**
-     * Manually run the full monthly ROI distribution job for all ACTIVE properties.
-     * Useful for testing or catching up after a scheduler miss.
-     */
+    @PostMapping("/{propertyId}/monthly-payment")
+    public ResponseEntity<MonthlyPaymentDistributionResponse> distributeMonthlyPayment(
+            @AuthenticationPrincipal AdminPrincipal principal,
+            @PathVariable String propertyId,
+            @Valid @RequestBody(required = false) MonthlyPaymentExecuteRequest request) {
+        MonthlyPaymentExecuteRequest body = request != null ? request : new MonthlyPaymentExecuteRequest(null, null);
+        return ResponseEntity.ok(monthlyPaymentDistributionService.distribute(propertyId, body));
+    }
+
+    @GetMapping("/{propertyId}/monthly-payment/history")
+    public ResponseEntity<List<MonthlyPaymentHistoryItem>> monthlyPaymentHistory(
+            @AuthenticationPrincipal AdminPrincipal principal,
+            @PathVariable String propertyId) {
+        return ResponseEntity.ok(monthlyPaymentDistributionService.history(propertyId));
+    }
+
     @PostMapping("/roi/run-distribution")
     public ResponseEntity<Void> runDistributionNow(
             @AuthenticationPrincipal AdminPrincipal principal) {

@@ -3,6 +3,7 @@ package com.minilands.backend.service.dashboard.impl;
 import com.minilands.backend.dto.dashboard.DashboardResponse;
 import com.minilands.backend.dto.investment.HoldingDetailResponse;
 import com.minilands.backend.dto.voting.ProposalResponse;
+import com.minilands.backend.dto.wallet.TransactionMapper;
 import com.minilands.backend.dto.wallet.TransactionResponse;
 import com.minilands.backend.entity.Transaction;
 import com.minilands.backend.entity.enums.HoldingStatus;
@@ -271,12 +272,6 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private TransactionResponse toTransactionResponse(Transaction t) {
-        return new TransactionResponse(
-                t.getId(),
-                t.getType(),
-                t.getAmount(),
-                t.getStatus(),
-                t.getDescription(),
-                t.getCreatedAt());
+        return TransactionMapper.toResponse(t);
     }
 }

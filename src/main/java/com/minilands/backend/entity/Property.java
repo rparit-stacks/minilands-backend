@@ -89,6 +89,12 @@ public class Property {
     /** Platform fee % deducted from rent before distributing to investors. Defaults to 10 if null. */
     private Integer rentPlatformFeePercent;
 
+    /**
+     * End instant of the last successful monthly payment accrual run (wallet credits).
+     * The next run accrues from this instant (exclusive) to "now". Null until the first run.
+     */
+    private Instant lastMonthlyPaymentDistributedAt;
+
     private Integer currentInvestors;
     private BigDecimal totalRaised;
 
@@ -528,6 +534,14 @@ public class Property {
 
     public void setRentPlatformFeePercent(Integer rentPlatformFeePercent) {
         this.rentPlatformFeePercent = rentPlatformFeePercent;
+    }
+
+    public Instant getLastMonthlyPaymentDistributedAt() {
+        return lastMonthlyPaymentDistributedAt;
+    }
+
+    public void setLastMonthlyPaymentDistributedAt(Instant lastMonthlyPaymentDistributedAt) {
+        this.lastMonthlyPaymentDistributedAt = lastMonthlyPaymentDistributedAt;
     }
 
     public Integer getCurrentInvestors() {

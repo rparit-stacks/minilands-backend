@@ -7,6 +7,7 @@ import com.minilands.backend.dto.dashboard.AdminDashboardResponse.MonthlyBarPoin
 import com.minilands.backend.dto.dashboard.AdminDashboardResponse.PieSlice;
 import com.minilands.backend.dto.dashboard.AdminDashboardResponse.PlatformSummary;
 import com.minilands.backend.dto.dashboard.AdminDashboardResponse.SaleVoteItem;
+import com.minilands.backend.entity.MonthlyPaymentRun;
 import com.minilands.backend.entity.Property;
 import com.minilands.backend.entity.RoiDistribution;
 import com.minilands.backend.entity.User;
@@ -19,6 +20,7 @@ import com.minilands.backend.entity.enums.ProposalStatus;
 import com.minilands.backend.entity.enums.PropertyStatus;
 import com.minilands.backend.entity.enums.WithdrawalStatus;
 import com.minilands.backend.repository.KycDocumentRepository;
+import com.minilands.backend.repository.MonthlyPaymentRunRepository;
 import com.minilands.backend.repository.PropertyHoldingRepository;
 import com.minilands.backend.repository.PropertyRepository;
 import com.minilands.backend.repository.PropertySaleProposalRepository;
@@ -35,6 +37,7 @@ import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -53,6 +56,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     private final PropertyRepository propertyRepository;
     private final PropertyHoldingRepository holdingRepository;
     private final RoiDistributionRepository roiDistributionRepository;
+    private final MonthlyPaymentRunRepository monthlyPaymentRunRepository;
     private final ShareListingRepository shareListingRepository;
     private final PropertySaleProposalRepository proposalRepository;
     private final KycDocumentRepository kycDocumentRepository;
@@ -63,6 +67,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
             PropertyRepository propertyRepository,
             PropertyHoldingRepository holdingRepository,
             RoiDistributionRepository roiDistributionRepository,
+            MonthlyPaymentRunRepository monthlyPaymentRunRepository,
             ShareListingRepository shareListingRepository,
             PropertySaleProposalRepository proposalRepository,
             KycDocumentRepository kycDocumentRepository,
@@ -71,6 +76,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         this.propertyRepository = propertyRepository;
         this.holdingRepository = holdingRepository;
         this.roiDistributionRepository = roiDistributionRepository;
+        this.monthlyPaymentRunRepository = monthlyPaymentRunRepository;
         this.shareListingRepository = shareListingRepository;
         this.proposalRepository = proposalRepository;
         this.kycDocumentRepository = kycDocumentRepository;
@@ -82,10 +88,11 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         List<Property> allProperties = propertyRepository.findAll();
         List<User> allUsers = userRepository.findAll();
         List<RoiDistribution> allRoiDist = roiDistributionRepository.findAll();
+        List<MonthlyPaymentRun> allMonthlyRuns = monthlyPaymentRunRepository.findAll();
 
-        PlatformSummary summary = buildSummary(allProperties, allUsers, allRoiDist);
+        PlatformSummary summary = buildSummary(allProperties, allUsers, allRoiDist, allMonthlyRuns);
         ActionQueue actionQueue = buildActionQueue();
-        Charts charts = buildCharts(allProperties, allUsers, allRoiDist);
+        Charts charts = buildCharts(allProperties, allUsers, allRoiDist, allMonthlyRuns);
 
         return new AdminDashboardResponse(summary, actionQueue, charts);
     }
@@ -93,7 +100,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     // ── Summary ───────────────────────────────────────────────────────────────────
 
     private PlatformSummary buildSummary(List<Property> properties, List<User> users,
-                                          List<RoiDistribution> roiDist) {
+                                          List<RoiDistribution> roiDist, List<MonthlyPaymentRun> monthlyRuns) {
         long totalUsers = users.size();
         long activeUsers = users.stream()
                 .filter(u -> u.getAccountStatus() == AccountStatus.ACTIVE)
@@ -113,7 +120,10 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
 
         BigDecimal totalRoiDistributed = roiDist.stream()
                 .map(r -> r.getTotalDistributed() != null ? r.getTotalDistributed() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .add(monthlyRuns.stream()
+                        .map(r -> r.getTotalDistributed() != null ? r.getTotalDistributed() : BigDecimal.ZERO)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add));
 
         long totalActiveHoldings = holdingRepository.countByStatus(HoldingStatus.ACTIVE);
 
@@ -150,12 +160,12 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     // ── Charts ────────────────────────────────────────────────────────────────────
 
     private Charts buildCharts(List<Property> properties, List<User> users,
-                                List<RoiDistribution> roiDist) {
+                                List<RoiDistribution> roiDist, List<MonthlyPaymentRun> monthlyRuns) {
         return new Charts(
                 buildPropertiesByStatusPie(properties),
                 buildUsersByKycStatusPie(users),
                 buildMonthlyFundsRaised(properties),
-                buildMonthlyRoiPaid(roiDist),
+                buildMonthlyRoiPaid(roiDist, monthlyRuns),
                 buildMonthlyNewUsers(users),
                 buildActiveSaleVoteDetails(properties));
     }
@@ -225,13 +235,23 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         return toBarPoints(monthlyMap);
     }
 
-    private List<MonthlyBarPoint> buildMonthlyRoiPaid(List<RoiDistribution> roiDist) {
+    private List<MonthlyBarPoint> buildMonthlyRoiPaid(
+            List<RoiDistribution> roiDist, List<MonthlyPaymentRun> monthlyRuns) {
         Map<YearMonth, BigDecimal> monthlyMap = last12MonthsMap();
         for (RoiDistribution rd : roiDist) {
             if (rd.getDistributionYear() != null && rd.getDistributionMonth() != null
                     && rd.getTotalDistributed() != null) {
                 YearMonth ym = YearMonth.of(rd.getDistributionYear(), rd.getDistributionMonth());
                 monthlyMap.computeIfPresent(ym, (k, v) -> v.add(rd.getTotalDistributed()));
+            }
+        }
+        Instant chartSince = Instant.now().minus(400, ChronoUnit.DAYS);
+        for (MonthlyPaymentRun run : monthlyRuns) {
+            if (run.getAccrualEnd() != null
+                    && !run.getAccrualEnd().isBefore(chartSince)
+                    && run.getTotalDistributed() != null) {
+                YearMonth ym = YearMonth.from(run.getAccrualEnd().atZone(ZoneOffset.UTC));
+                monthlyMap.computeIfPresent(ym, (k, v) -> v.add(run.getTotalDistributed()));
             }
         }
         return toBarPoints(monthlyMap);

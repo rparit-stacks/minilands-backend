@@ -6,6 +6,7 @@ import java.time.Instant;
 public record RoiEarningResponse(
         String id,
         String roiDistributionId,
+        String monthlyPaymentRunId,
         BigDecimal amount,
         BigDecimal roiPercentage,
         Instant earnedOnDate,

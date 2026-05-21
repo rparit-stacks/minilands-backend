@@ -16,6 +16,9 @@ public class RoiEarning {
     @Indexed
     private String roiDistributionId;
 
+    @Indexed(sparse = true)
+    private String monthlyPaymentRunId;
+
     @Indexed
     private String holdingId;
 
@@ -47,6 +50,14 @@ public class RoiEarning {
 
     public void setRoiDistributionId(String roiDistributionId) {
         this.roiDistributionId = roiDistributionId;
+    }
+
+    public String getMonthlyPaymentRunId() {
+        return monthlyPaymentRunId;
+    }
+
+    public void setMonthlyPaymentRunId(String monthlyPaymentRunId) {
+        this.monthlyPaymentRunId = monthlyPaymentRunId;
     }
 
     public String getHoldingId() {

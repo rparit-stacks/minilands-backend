@@ -162,6 +162,9 @@ public class AdminPropertyCatalogServiceImpl implements AdminPropertyCatalogServ
         if (request.rentPlatformFeePercent() != null) {
             property.setRentPlatformFeePercent(request.rentPlatformFeePercent());
         }
+        if (request.marketplaceFeePercent() != null) {
+            property.setMarketplaceFeePercent(request.marketplaceFeePercent());
+        }
         if (request.distributionFrequency() != null) {
             property.setDistributionFrequency(request.distributionFrequency());
         }
@@ -314,6 +317,7 @@ public class AdminPropertyCatalogServiceImpl implements AdminPropertyCatalogServ
         if (request.rentPlatformFeePercent() != null) {
             property.setRentPlatformFeePercent(request.rentPlatformFeePercent());
         }
+        property.setMarketplaceFeePercent(request.marketplaceFeePercent());
         property.setDistributionFrequency(request.distributionFrequency());
         property.setHoldPeriodMonths(request.holdPeriodMonths());
         property.setDeveloperName(request.developerName());

@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
@@ -27,6 +28,17 @@ public class PropertySaleProposal {
     private String adminNote;
     private Instant reviewedAt;
     private Instant createdAt;
+
+    /** Total sale proceeds entered by admin when bulk-distributing. Null until distribution runs. */
+    private BigDecimal totalSaleProceeds;
+    /** Pro-rata sum credited to investor wallets in the bulk distribution. */
+    private BigDecimal investorProceedsTotal;
+    /** Proportional retained by the platform/SPV for unsold shares (not credited to any investor). */
+    private BigDecimal spvProceeds;
+    /** Admin id that triggered the bulk distribution. */
+    private String distributedByAdminId;
+    /** When the bulk distribution ran. */
+    private Instant distributedAt;
 
     public PropertySaleProposal() {
     }
@@ -54,4 +66,19 @@ public class PropertySaleProposal {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public BigDecimal getTotalSaleProceeds() { return totalSaleProceeds; }
+    public void setTotalSaleProceeds(BigDecimal totalSaleProceeds) { this.totalSaleProceeds = totalSaleProceeds; }
+
+    public BigDecimal getInvestorProceedsTotal() { return investorProceedsTotal; }
+    public void setInvestorProceedsTotal(BigDecimal investorProceedsTotal) { this.investorProceedsTotal = investorProceedsTotal; }
+
+    public BigDecimal getSpvProceeds() { return spvProceeds; }
+    public void setSpvProceeds(BigDecimal spvProceeds) { this.spvProceeds = spvProceeds; }
+
+    public String getDistributedByAdminId() { return distributedByAdminId; }
+    public void setDistributedByAdminId(String distributedByAdminId) { this.distributedByAdminId = distributedByAdminId; }
+
+    public Instant getDistributedAt() { return distributedAt; }
+    public void setDistributedAt(Instant distributedAt) { this.distributedAt = distributedAt; }
 }

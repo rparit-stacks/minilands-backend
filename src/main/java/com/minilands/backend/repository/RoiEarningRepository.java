@@ -11,7 +11,5 @@ public interface RoiEarningRepository extends MongoRepository<RoiEarning, String
 
     List<RoiEarning> findByHoldingId(String holdingId);
 
-    List<RoiEarning> findByRoiDistributionId(String roiDistributionId);
-
     List<RoiEarning> findByPropertyId(String propertyId);
 }

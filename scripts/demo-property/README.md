@@ -37,6 +37,6 @@ curl -sS "$BASE_URL/api/properties/search?sortBy=newest&page=0&size=10"
 
 ## Notes
 
-- **`annualRoi`** and similar yield fields are stored as **percent numbers** (e.g. `10.5` = 10.5% p.a.), consistent with backend valuation math (`annualRoi / 100 / 365` for daily growth).
+- **`annualRoi`** / **`monthlyRoi`** are **stated** percent numbers for display (e.g. `10.5` = 10.5% p.a.). Valuation saves fill **separate** `valuationImpliedAnnualRoi` / `valuationImpliedMonthlyRoi` and do not overwrite these.
 - **`reraRegistrationId`** is a placeholder; replace for any real listing.
 - External image hosts may block hotlinking or change URLs; for production use your own CDN or uploads.

@@ -26,7 +26,7 @@ public record AdminDashboardResponse(
             long activeProperties,
             long soldProperties,
             BigDecimal totalFundsRaised,         // sum of totalRaised across all properties
-            BigDecimal totalRoiDistributed,      // sum of all RoiDistribution.totalDistributed
+            BigDecimal totalRoiDistributed,      // sum of MonthlyPaymentRun.totalDistributed
             long totalActiveHoldings,
             long activeMarketplaceListings,
             long activeSaleVotes,                // properties with saleVotePercent > 0

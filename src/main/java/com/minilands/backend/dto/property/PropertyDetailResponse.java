@@ -38,6 +38,7 @@ public record PropertyDetailResponse(
         BigDecimal appreciationRatePercent,
         BigDecimal monthlyRent,
         Integer rentPlatformFeePercent,
+        BigDecimal marketplaceFeePercent,
         DistributionFrequency distributionFrequency,
         Integer holdPeriodMonths,
         String developerName,

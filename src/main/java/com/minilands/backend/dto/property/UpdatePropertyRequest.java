@@ -6,6 +6,7 @@ import com.minilands.backend.entity.enums.LegalStatus;
 import com.minilands.backend.entity.enums.ListingVisibility;
 import com.minilands.backend.entity.enums.PropertyType;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -43,6 +44,7 @@ public record UpdatePropertyRequest(
         @DecimalMin("0") BigDecimal appreciationRatePercent,
         @DecimalMin("0.01") BigDecimal monthlyRent,
         @Min(0) @Max(100) Integer rentPlatformFeePercent,
+        @DecimalMin("0") @DecimalMax("100") BigDecimal marketplaceFeePercent,
         DistributionFrequency distributionFrequency,
         @Min(1) Integer holdPeriodMonths,
         @Size(max = 200) String developerName,

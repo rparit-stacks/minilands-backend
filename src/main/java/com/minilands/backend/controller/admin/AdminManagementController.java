@@ -2,6 +2,8 @@ package com.minilands.backend.controller.admin;
 
 import com.minilands.backend.dto.admin.AdminResponse;
 import com.minilands.backend.dto.admin.CreateAdminRequest;
+import com.minilands.backend.dto.admin.InviteAdminRequest;
+import com.minilands.backend.dto.admin.InviteAdminResponse;
 import com.minilands.backend.dto.admin.UpdateAdminRequest;
 import com.minilands.backend.security.AdminPrincipal;
 import com.minilands.backend.service.admin.AdminManagementService;
@@ -48,6 +50,14 @@ public class AdminManagementController {
             @AuthenticationPrincipal AdminPrincipal principal,
             @Valid @RequestBody CreateAdminRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(adminManagementService.createAdmin(request));
+    }
+
+    @PostMapping("/invite")
+    public ResponseEntity<InviteAdminResponse> invite(
+            @AuthenticationPrincipal AdminPrincipal principal,
+            @Valid @RequestBody InviteAdminRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(adminManagementService.inviteAdmin(principal.getAdminId(), request));
     }
 
     @PatchMapping("/{adminId}")

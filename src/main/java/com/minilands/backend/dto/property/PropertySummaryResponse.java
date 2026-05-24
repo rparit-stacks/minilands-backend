@@ -40,6 +40,7 @@ public record PropertySummaryResponse(
         BigDecimal rentalYieldPercent,
         BigDecimal monthlyRent,
         Integer rentPlatformFeePercent,
+        BigDecimal marketplaceFeePercent,
         DistributionFrequency distributionFrequency,
         Instant lastMonthlyPaymentDistributedAt
 ) {

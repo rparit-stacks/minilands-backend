@@ -15,6 +15,11 @@ public record SaleVoteStatusResponse(
         boolean currentUserOptedIn,
         ProposalStatus proposalStatus,    // null if no proposal exists yet
         Instant thresholdReachedAt,
-        String adminNote
+        String adminNote,
+        // Populated when proposalStatus = DISTRIBUTED (bulk exit payout has run).
+        BigDecimal totalSaleProceeds,
+        BigDecimal investorProceedsTotal,
+        BigDecimal spvProceeds,
+        Instant distributedAt
 ) {
 }

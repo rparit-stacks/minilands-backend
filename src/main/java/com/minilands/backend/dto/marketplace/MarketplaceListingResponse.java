@@ -15,9 +15,14 @@ public record MarketplaceListingResponse(
         BigDecimal totalAskPrice,
         BigDecimal marketPricePerShare,   // current market valuation for reference
         BigDecimal discountVsMarket,      // marketPrice - askPrice (positive = buyer gets a deal, negative = premium)
+        BigDecimal marketplaceFeePercent, // property's resale fee % at time of view
+        BigDecimal platformFee,           // gross × fee%
+        BigDecimal sellerProceeds,        // gross − platformFee
         MarketplaceListingStatus status,
         Instant createdAt,
         Instant updatedAt,
+        Instant expiresAt,
+        Instant expiredAt,
         Instant soldAt,
         String buyerId
 ) {

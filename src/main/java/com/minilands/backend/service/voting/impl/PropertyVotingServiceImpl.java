@@ -194,6 +194,10 @@ public class PropertyVotingServiceImpl implements PropertyVotingService {
         ProposalStatus proposalStatus = proposal.map(PropertySaleProposal::getStatus).orElse(null);
         Instant thresholdReachedAt = proposal.map(PropertySaleProposal::getThresholdReachedAt).orElse(null);
         String adminNote = proposal.map(PropertySaleProposal::getAdminNote).orElse(null);
+        BigDecimal totalSaleProceeds = proposal.map(PropertySaleProposal::getTotalSaleProceeds).orElse(null);
+        BigDecimal investorProceedsTotal = proposal.map(PropertySaleProposal::getInvestorProceedsTotal).orElse(null);
+        BigDecimal spvProceeds = proposal.map(PropertySaleProposal::getSpvProceeds).orElse(null);
+        Instant distributedAt = proposal.map(PropertySaleProposal::getDistributedAt).orElse(null);
 
         return new SaleVoteStatusResponse(
                 property.getId(),
@@ -205,7 +209,11 @@ public class PropertyVotingServiceImpl implements PropertyVotingService {
                 optedIn,
                 proposalStatus,
                 thresholdReachedAt,
-                adminNote);
+                adminNote,
+                totalSaleProceeds,
+                investorProceedsTotal,
+                spvProceeds,
+                distributedAt);
     }
 
     private Property requireProperty(String propertyId) {

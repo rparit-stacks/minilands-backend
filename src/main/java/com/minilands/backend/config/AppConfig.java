@@ -19,7 +19,9 @@ import org.springframework.web.client.RestClient;
         WalletProperties.class,
         NotificationProperties.class,
         OneSignalProperties.class,
-        InvestmentProperties.class
+        InvestmentProperties.class,
+        MarketplaceProperties.class,
+        BrandProperties.class
 })
 public class AppConfig {
 

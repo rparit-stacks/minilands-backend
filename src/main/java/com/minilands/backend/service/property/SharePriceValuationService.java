@@ -12,8 +12,9 @@ import java.time.ZoneOffset;
 
 /**
  * Investor share value follows the latest building valuation: one share = total property value ÷ total shares.
- * No separate manual “growth bump” on top — admin valuation updates drive per-share value; annual % ROI is
- * derived when valuation is saved (see {@link com.minilands.backend.service.property.impl.AdminPropertyValuationServiceImpl}).
+ * No separate manual “growth bump” on top — admin valuation updates drive per-share value. Implied capital-growth
+ * % (annualized from the last valuation window) is stored separately from admin-stated ROI on the property
+ * (see {@link com.minilands.backend.service.property.impl.AdminPropertyValuationServiceImpl}).
  */
 @Service
 public class SharePriceValuationService {

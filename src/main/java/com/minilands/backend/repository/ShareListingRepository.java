@@ -13,4 +13,6 @@ public interface ShareListingRepository extends MongoRepository<ShareListing, St
     List<ShareListing> findBySellerIdAndStatus(String sellerId, MarketplaceListingStatus status);
 
     List<ShareListing> findBySellerId(String sellerId);
+
+    List<ShareListing> findByStatus(MarketplaceListingStatus status);
 }

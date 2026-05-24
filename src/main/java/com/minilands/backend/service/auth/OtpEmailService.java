@@ -1,40 +1,41 @@
 package com.minilands.backend.service.auth;
 
+import com.minilands.backend.config.OtpProperties;
+import com.minilands.backend.service.email.EmailSender;
+import com.minilands.backend.service.email.EmailTemplateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
+/**
+ * Sends branded HTML one-time-passcode emails. Renders via {@link EmailTemplateService}
+ * and dispatches via {@link EmailSender}. Falls back to a dev log if mail isn't configured.
+ */
 @Service
 public class OtpEmailService {
 
     private static final Logger log = LoggerFactory.getLogger(OtpEmailService.class);
 
-    private final JavaMailSender mailSender;
-    private final String mailFrom;
+    private final EmailTemplateService templates;
+    private final EmailSender sender;
+    private final OtpProperties otpProperties;
 
     public OtpEmailService(
-            @Autowired(required = false) JavaMailSender mailSender,
-            @Value("${spring.mail.username:}") String mailFrom) {
-        this.mailSender = mailSender;
-        this.mailFrom = mailFrom;
+            EmailTemplateService templates,
+            EmailSender sender,
+            OtpProperties otpProperties) {
+        this.templates = templates;
+        this.sender = sender;
+        this.otpProperties = otpProperties;
     }
 
     public void sendOtp(String email, String otp) {
-        if (mailSender == null || !StringUtils.hasText(mailFrom)) {
+        int validMinutes = otpProperties.getExpirationMinutes() > 0 ? otpProperties.getExpirationMinutes() : 10;
+        EmailTemplateService.Rendered rendered = templates.renderOtp(otp, validMinutes);
+        if (!sender.isConfigured()) {
             log.warn("Mail not configured. OTP for {} is {} (dev only)", email, otp);
             return;
         }
-
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(mailFrom);
-        message.setTo(email);
-        message.setSubject("Your Minilands login code");
-        message.setText("Your one-time login code is: " + otp + "\n\nValid for 10 minutes. Do not share this code.");
-        mailSender.send(message);
+        sender.send(email, rendered);
     }
 }

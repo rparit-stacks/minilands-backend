@@ -31,6 +31,11 @@ public class ShareListing {
     private String buyerId;
     private Instant soldAt;
 
+    /** Instant after which an ACTIVE listing is auto-expired. Set on creation. */
+    private Instant expiresAt;
+    /** Set when the sweeper transitions ACTIVE → EXPIRED. */
+    private Instant expiredAt;
+
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -66,6 +71,12 @@ public class ShareListing {
 
     public Instant getSoldAt() { return soldAt; }
     public void setSoldAt(Instant soldAt) { this.soldAt = soldAt; }
+
+    public Instant getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(Instant expiresAt) { this.expiresAt = expiresAt; }
+
+    public Instant getExpiredAt() { return expiredAt; }
+    public void setExpiredAt(Instant expiredAt) { this.expiredAt = expiredAt; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

@@ -47,7 +47,9 @@ public class SecurityConfig {
                                 "/api/auth/refresh",
                                 "/api/admin/auth/login",
                                 "/api/admin/auth/refresh",
+                                "/api/admin/auth/setup",
                                 "/api/webhooks/razorpay").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/admin/auth/setup/info").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/kyc/**", "/api/notifications/**", "/api/media/**", "/api/wallet/**",
                                 "/api/properties/**", "/api/investments/**", "/api/dashboard/**",

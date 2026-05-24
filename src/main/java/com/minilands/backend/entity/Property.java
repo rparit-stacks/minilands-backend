@@ -90,6 +90,12 @@ public class Property {
     private Integer rentPlatformFeePercent;
 
     /**
+     * Platform fee % deducted from seller proceeds on a secondary-market trade. Defaults to 0 if null
+     * (no fee). Set per property by admin.
+     */
+    private BigDecimal marketplaceFeePercent;
+
+    /**
      * End instant of the last successful monthly payment accrual run (wallet credits).
      * The next run accrues from this instant (exclusive) to "now". Null until the first run.
      */
@@ -534,6 +540,14 @@ public class Property {
 
     public void setRentPlatformFeePercent(Integer rentPlatformFeePercent) {
         this.rentPlatformFeePercent = rentPlatformFeePercent;
+    }
+
+    public BigDecimal getMarketplaceFeePercent() {
+        return marketplaceFeePercent != null ? marketplaceFeePercent : BigDecimal.ZERO;
+    }
+
+    public void setMarketplaceFeePercent(BigDecimal marketplaceFeePercent) {
+        this.marketplaceFeePercent = marketplaceFeePercent;
     }
 
     public Instant getLastMonthlyPaymentDistributedAt() {

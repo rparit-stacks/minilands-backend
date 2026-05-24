@@ -120,7 +120,9 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(p -> new ProposalResponse(
                         p.getId(), p.getPropertyId(), p.getStatus(),
                         p.getThresholdReachedAt(),
-                        p.getReviewedByAdminId(), p.getAdminNote(), p.getReviewedAt()))
+                        p.getReviewedByAdminId(), p.getAdminNote(), p.getReviewedAt(),
+                        p.getTotalSaleProceeds(), p.getInvestorProceedsTotal(), p.getSpvProceeds(),
+                        p.getDistributedByAdminId(), p.getDistributedAt()))
                 .distinct()
                 .toList();
 

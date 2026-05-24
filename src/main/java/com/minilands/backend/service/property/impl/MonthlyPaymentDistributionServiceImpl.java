@@ -179,7 +179,9 @@ public class MonthlyPaymentDistributionServiceImpl implements MonthlyPaymentDist
                             + " (pro-rata among subscribed shares in this accrual window).");
         }
 
-        BigDecimal spvOut = ZERO;
+        // Model B: SPV retains its proportional share of poolNet on unsold inventory.
+        // Stored on the run for audit; not credited to any wallet (platform/SPV books it off-flow).
+        BigDecimal spvOut = alloc.spvPayout() != null ? alloc.spvPayout() : ZERO;
 
         BigDecimal totalOut = investorsOut.add(spvOut);
         run.setSpvDistributed(spvOut);
@@ -248,6 +250,14 @@ public class MonthlyPaymentDistributionServiceImpl implements MonthlyPaymentDist
                 .toList();
     }
 
+    /**
+     * Model B (SPV retention): investors collectively receive {@code poolNet × investorShareDaysSum / denominator}.
+     * The rest — proportional to unsold share-days — is retained by the platform/SPV (it does not flow to active holders).
+     *
+     * <p>Per investor: {@code payout = investorPool × weight / investorShareDaysSum}, with the last bucket absorbing
+     * paise rounding so investor payouts sum exactly to {@code investorPool} and SPV retention sums exactly to
+     * {@code poolNet - investorPool}.
+     */
     private AllocationPreview allocatePreview(
             BigDecimal poolNet,
             BigDecimal denominator,
@@ -258,15 +268,18 @@ public class MonthlyPaymentDistributionServiceImpl implements MonthlyPaymentDist
             spvShareDays = ZERO;
         }
 
+        BigDecimal investorPool = denominator.compareTo(ZERO) > 0
+                ? poolNet.multiply(investorShareDaysSum)
+                        .divide(denominator, 2, RoundingMode.HALF_UP)
+                : ZERO;
+        BigDecimal spvPayout = poolNet.subtract(investorPool).max(ZERO);
+
         List<BigDecimal> weights = new ArrayList<>();
         for (WeightedHolding wh : positive) {
             weights.add(wh.weight());
         }
 
-        List<BigDecimal> payouts = allocateProportional(poolNet, weights);
-
-        BigDecimal spvPayout = ZERO;
-        List<BigDecimal> investorPayouts = payouts;
+        List<BigDecimal> investorPayouts = allocateProportional(investorPool, weights);
 
         List<MonthlyPaymentPreviewInvestorRow> rows = new ArrayList<>();
         for (int i = 0; i < positive.size(); i++) {
@@ -286,11 +299,15 @@ public class MonthlyPaymentDistributionServiceImpl implements MonthlyPaymentDist
     }
 
     /**
-     * Split {@code poolNet} by weights; last bucket absorbs paise rounding so the sum matches {@code poolNet}.
+     * Split {@code pool} by weights; last bucket absorbs paise rounding so the sum matches {@code pool}.
+     * Returns zero payouts when {@code pool} is zero (e.g., all shares unsold so investor pool is empty).
      */
-    private static List<BigDecimal> allocateProportional(BigDecimal poolNet, List<BigDecimal> weights) {
+    private static List<BigDecimal> allocateProportional(BigDecimal pool, List<BigDecimal> weights) {
         if (weights.isEmpty()) {
             return List.of();
+        }
+        if (pool.compareTo(ZERO) <= 0) {
+            return weights.stream().map(w -> ZERO.setScale(2)).toList();
         }
         BigDecimal totalW = weights.stream().reduce(ZERO, BigDecimal::add);
         if (totalW.compareTo(ZERO) <= 0) {
@@ -301,8 +318,8 @@ public class MonthlyPaymentDistributionServiceImpl implements MonthlyPaymentDist
         for (int i = 0; i < weights.size(); i++) {
             boolean last = i == weights.size() - 1;
             BigDecimal payout = last
-                    ? poolNet.subtract(running).setScale(2, RoundingMode.HALF_UP)
-                    : poolNet.multiply(weights.get(i)).divide(totalW, 2, RoundingMode.HALF_UP);
+                    ? pool.subtract(running).setScale(2, RoundingMode.HALF_UP)
+                    : pool.multiply(weights.get(i)).divide(totalW, 2, RoundingMode.HALF_UP);
             out.add(payout);
             running = running.add(payout);
         }

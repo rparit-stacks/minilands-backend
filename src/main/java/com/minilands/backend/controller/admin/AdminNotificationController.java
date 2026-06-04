@@ -1,6 +1,7 @@
 package com.minilands.backend.controller.admin;
 
 import com.minilands.backend.dto.auth.MessageResponse;
+import com.minilands.backend.dto.notification.BroadcastNotificationRequest;
 import com.minilands.backend.dto.notification.SendNotificationRequest;
 import com.minilands.backend.repository.UserRepository;
 import com.minilands.backend.security.AdminPrincipal;
@@ -30,6 +31,8 @@ public class AdminNotificationController {
         this.userRepository = userRepository;
     }
 
+    /// Legacy endpoint — kept so the old admin form keeps working. Plain
+    /// text-only notification to a single user.
     @PostMapping
     public ResponseEntity<MessageResponse> sendToUser(
             @AuthenticationPrincipal AdminPrincipal principal,
@@ -44,5 +47,17 @@ public class AdminNotificationController {
                 request.message());
 
         return ResponseEntity.ok(new MessageResponse("Notification sent to user"));
+    }
+
+    /// Broadcast a rich notification (title + body + optional image +
+    /// optional deep link) to a target audience: all users, KYC-approved,
+    /// pending KYC, active investors, or a specific user-ID list.
+    @PostMapping("/broadcast")
+    public ResponseEntity<MessageResponse> broadcast(
+            @AuthenticationPrincipal AdminPrincipal principal,
+            @Valid @RequestBody BroadcastNotificationRequest request) {
+        final int count = notificationService.broadcast(request);
+        return ResponseEntity.ok(new MessageResponse(
+                "Notification queued for " + count + " recipient(s)."));
     }
 }

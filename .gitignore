@@ -33,3 +33,7 @@ build/
 .vscode/
 
 src/main/resources/application.yaml
+
+# Firebase service account (DO NOT COMMIT)
+src/main/resources/firebase-adminsdk.json
+**/firebase-adminsdk*.json

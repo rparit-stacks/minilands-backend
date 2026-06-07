@@ -26,6 +26,7 @@ import com.minilands.backend.security.JwtService;
 import com.minilands.backend.security.TokenHashService;
 import com.minilands.backend.service.auth.OtpEmailService;
 import com.minilands.backend.service.auth.UserAuthService;
+import com.minilands.backend.service.referral.ReferralService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
@@ -48,6 +49,7 @@ public class UserAuthServiceImpl implements UserAuthService {
     private final JwtProperties jwtProperties;
     private final OtpEmailService otpEmailService;
     private final GoogleTokenVerifierService googleTokenVerifierService;
+    private final ReferralService referralService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public UserAuthServiceImpl(
@@ -61,7 +63,8 @@ public class UserAuthServiceImpl implements UserAuthService {
             OtpProperties otpProperties,
             JwtProperties jwtProperties,
             OtpEmailService otpEmailService,
-            GoogleTokenVerifierService googleTokenVerifierService) {
+            GoogleTokenVerifierService googleTokenVerifierService,
+            ReferralService referralService) {
         this.userRepository = userRepository;
         this.walletRepository = walletRepository;
         this.emailOtpRepository = emailOtpRepository;
@@ -73,6 +76,7 @@ public class UserAuthServiceImpl implements UserAuthService {
         this.jwtProperties = jwtProperties;
         this.otpEmailService = otpEmailService;
         this.googleTokenVerifierService = googleTokenVerifierService;
+        this.referralService = referralService;
     }
 
     @Override
@@ -119,8 +123,9 @@ public class UserAuthServiceImpl implements UserAuthService {
         emailOtp.setConsumed(true);
         emailOtpRepository.save(emailOtp);
 
-        User user = userRepository.findByEmail(email)
-                .orElseGet(() -> createUser(email, null, null, AuthProvider.EMAIL_OTP));
+        Optional<User> existing = userRepository.findByEmail(email);
+        boolean isNewUser = existing.isEmpty();
+        User user = existing.orElseGet(() -> createUser(email, null, null, AuthProvider.EMAIL_OTP));
 
         if (user.getAuthProvider() == AuthProvider.GOOGLE) {
             throw new AuthException("This email is registered with Google. Use Google sign-in.");
@@ -131,6 +136,10 @@ public class UserAuthServiceImpl implements UserAuthService {
         userRepository.save(user);
         ensureWallet(user);
 
+        if (isNewUser) {
+            referralService.applyReferralOnSignup(user, request.referralCode());
+        }
+
         return issueTokens(user);
     }
 
@@ -138,13 +147,14 @@ public class UserAuthServiceImpl implements UserAuthService {
     public AuthResponse authenticateWithGoogle(GoogleAuthRequest request) {
         GoogleUserInfo googleUser = googleTokenVerifierService.verify(request.idToken());
 
-        User user = userRepository.findByGoogleId(googleUser.googleId())
-                .or(() -> userRepository.findByEmail(googleUser.email()))
-                .orElseGet(() -> createUser(
-                        googleUser.email(),
-                        googleUser.name(),
-                        googleUser.googleId(),
-                        AuthProvider.GOOGLE));
+        Optional<User> existing = userRepository.findByGoogleId(googleUser.googleId())
+                .or(() -> userRepository.findByEmail(googleUser.email()));
+        boolean isNewUser = existing.isEmpty();
+        User user = existing.orElseGet(() -> createUser(
+                googleUser.email(),
+                googleUser.name(),
+                googleUser.googleId(),
+                AuthProvider.GOOGLE));
 
         if (user.getAuthProvider() == AuthProvider.EMAIL_OTP && user.getGoogleId() == null) {
             user.setGoogleId(googleUser.googleId());
@@ -163,6 +173,10 @@ public class UserAuthServiceImpl implements UserAuthService {
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
         ensureWallet(user);
+
+        if (isNewUser) {
+            referralService.applyReferralOnSignup(user, request.referralCode());
+        }
 
         return issueTokens(user);
     }

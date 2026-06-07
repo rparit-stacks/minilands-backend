@@ -19,6 +19,8 @@ public class Notification {
     private NotificationType type;
     private String title;
     private String message;
+    private String imageUrl;
+    private String deepLink;
     private boolean read;
     private Instant createdAt;
 
@@ -63,6 +65,22 @@ public class Notification {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getDeepLink() {
+        return deepLink;
+    }
+
+    public void setDeepLink(String deepLink) {
+        this.deepLink = deepLink;
     }
 
     public boolean isRead() {

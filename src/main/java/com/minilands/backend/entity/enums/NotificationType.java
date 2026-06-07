@@ -8,5 +8,6 @@ public enum NotificationType {
     ROI,
     VOTE,
     EXIT,
+    REFERRAL,
     GENERAL
 }

@@ -33,6 +33,18 @@ public class User {
     private String profilePictureUrl;
     private String oneSignalPlayerId;
     private boolean onboardingCompleted;
+
+    /// The user's own shareable referral code (generated lazily on first fetch).
+    @Indexed(unique = true, sparse = true)
+    private String referralCode;
+
+    /// The userId of whoever referred this user (null if they joined organically).
+    private String referredByUserId;
+
+    /// Set when this user's referral reward has been credited to their referrer,
+    /// so we never double-pay. Acts as the "referral completed" marker.
+    private Instant referralRewardedAt;
+
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -149,6 +161,30 @@ public class User {
 
     public void setOnboardingCompleted(boolean onboardingCompleted) {
         this.onboardingCompleted = onboardingCompleted;
+    }
+
+    public String getReferralCode() {
+        return referralCode;
+    }
+
+    public void setReferralCode(String referralCode) {
+        this.referralCode = referralCode;
+    }
+
+    public String getReferredByUserId() {
+        return referredByUserId;
+    }
+
+    public void setReferredByUserId(String referredByUserId) {
+        this.referredByUserId = referredByUserId;
+    }
+
+    public Instant getReferralRewardedAt() {
+        return referralRewardedAt;
+    }
+
+    public void setReferralRewardedAt(Instant referralRewardedAt) {
+        this.referralRewardedAt = referralRewardedAt;
     }
 
     public Instant getCreatedAt() {

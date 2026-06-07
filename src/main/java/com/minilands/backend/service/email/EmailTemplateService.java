@@ -321,6 +321,7 @@ public class EmailTemplateService {
             case ROI        -> new Category(COLOR_SUCCESS, "Rent payout");
             case VOTE       -> new Category(COLOR_PRIMARY_DARK, "Vote");
             case EXIT       -> new Category(COLOR_ERROR, "Exit / Sale");
+            case REFERRAL   -> new Category(COLOR_SUCCESS, "Referral");
             case GENERAL    -> new Category(COLOR_PRIMARY, "Update");
         };
     }

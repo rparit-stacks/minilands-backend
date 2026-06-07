@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Pattern;
 
 public record VerifyOtpRequest(
         @NotBlank @Email String email,
-        @NotBlank @Pattern(regexp = "\\d{6}") String otp
+        @NotBlank @Pattern(regexp = "\\d{6}") String otp,
+        /** Optional referral code captured from a deep link at signup. */
+        String referralCode
 ) {
 }

@@ -75,6 +75,7 @@ public class UserProfileServiceImpl implements UserProfileService {
                 user.getAccountStatus(),
                 user.getEmailVerifiedAt(),
                 user.getCreatedAt(),
-                user.isOnboardingCompleted());
+                user.isOnboardingCompleted(),
+                user.getReferralCode());
     }
 }

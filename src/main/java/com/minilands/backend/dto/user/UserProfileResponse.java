@@ -17,6 +17,7 @@ public record UserProfileResponse(
         AccountStatus accountStatus,
         Instant emailVerifiedAt,
         Instant createdAt,
-        boolean onboardingCompleted
+        boolean onboardingCompleted,
+        String referralCode
 ) {
 }

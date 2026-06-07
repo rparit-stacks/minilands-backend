@@ -9,6 +9,8 @@ public record NotificationResponse(
         NotificationType type,
         String title,
         String message,
+        String imageUrl,
+        String deepLink,
         boolean read,
         Instant createdAt
 ) {

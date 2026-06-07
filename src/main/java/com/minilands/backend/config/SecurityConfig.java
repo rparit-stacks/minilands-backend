@@ -53,7 +53,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/kyc/**", "/api/notifications/**", "/api/media/**", "/api/wallet/**",
                                 "/api/properties/**", "/api/investments/**", "/api/dashboard/**",
-                                "/api/voting/**", "/api/marketplace/**", "/api/exit/**", "/api/profile/**")
+                                "/api/voting/**", "/api/marketplace/**", "/api/exit/**", "/api/profile/**",
+                                "/api/referrals/**")
                         .hasRole("INVESTOR")
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())

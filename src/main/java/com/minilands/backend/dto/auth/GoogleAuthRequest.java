@@ -3,6 +3,8 @@ package com.minilands.backend.dto.auth;
 import jakarta.validation.constraints.NotBlank;
 
 public record GoogleAuthRequest(
-        @NotBlank String idToken
+        @NotBlank String idToken,
+        /** Optional referral code captured from a deep link at signup. */
+        String referralCode
 ) {
 }

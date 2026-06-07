@@ -21,7 +21,8 @@ import org.springframework.web.client.RestClient;
         OneSignalProperties.class,
         InvestmentProperties.class,
         MarketplaceProperties.class,
-        BrandProperties.class
+        BrandProperties.class,
+        ReferralProperties.class
 })
 public class AppConfig {
 

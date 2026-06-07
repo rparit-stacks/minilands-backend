@@ -22,6 +22,7 @@ import com.minilands.backend.service.investment.PropertyInvestmentService;
 import com.minilands.backend.service.kyc.KycGuard;
 import com.minilands.backend.service.notification.NotificationService;
 import com.minilands.backend.service.property.SharePriceValuationService;
+import com.minilands.backend.service.referral.ReferralService;
 import com.minilands.backend.service.wallet.WalletLedgerService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +46,7 @@ public class PropertyInvestmentServiceImpl implements PropertyInvestmentService 
     private final WalletLedgerService walletLedgerService;
     private final SharePriceValuationService sharePriceValuationService;
     private final NotificationService notificationService;
+    private final ReferralService referralService;
 
     public PropertyInvestmentServiceImpl(
             UserRepository userRepository,
@@ -53,7 +55,8 @@ public class PropertyInvestmentServiceImpl implements PropertyInvestmentService 
             RoiEarningRepository roiEarningRepository,
             WalletLedgerService walletLedgerService,
             SharePriceValuationService sharePriceValuationService,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            ReferralService referralService) {
         this.userRepository = userRepository;
         this.propertyRepository = propertyRepository;
         this.holdingRepository = holdingRepository;
@@ -61,6 +64,7 @@ public class PropertyInvestmentServiceImpl implements PropertyInvestmentService 
         this.walletLedgerService = walletLedgerService;
         this.sharePriceValuationService = sharePriceValuationService;
         this.notificationService = notificationService;
+        this.referralService = referralService;
     }
 
     @Override
@@ -122,6 +126,10 @@ public class PropertyInvestmentServiceImpl implements PropertyInvestmentService 
                 NotificationType.INVESTMENT,
                 "Investment confirmed",
                 "You bought " + shares + " shares in " + property.getName() + " for ₹" + amount);
+
+        // Pay out any pending referral reward now that this investor has invested.
+        // Idempotent — only credits once (guarded by User.referralRewardedAt).
+        referralService.rewardFirstInvestment(userId);
 
         return toHoldingDetail(holding, property);
     }

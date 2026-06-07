@@ -100,7 +100,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         if (notificationProperties.isInAppEnabled()) {
-            persistInApp(userId, type, title, message);
+            persistInApp(userId, type, title, message, imageUrl, deepLink);
         }
 
         // Inject deepLink into metadata so the client can read it from
@@ -194,12 +194,20 @@ public class NotificationServiceImpl implements NotificationService {
         userRepository.save(user);
     }
 
-    private void persistInApp(String userId, NotificationType type, String title, String message) {
+    private void persistInApp(
+            String userId,
+            NotificationType type,
+            String title,
+            String message,
+            String imageUrl,
+            String deepLink) {
         Notification notification = new Notification();
         notification.setUserId(userId);
         notification.setType(type);
         notification.setTitle(title);
         notification.setMessage(message);
+        notification.setImageUrl(imageUrl != null && !imageUrl.isBlank() ? imageUrl : null);
+        notification.setDeepLink(deepLink != null && !deepLink.isBlank() ? deepLink : null);
         notification.setRead(false);
         notification.setCreatedAt(Instant.now());
         notificationRepository.save(notification);
@@ -211,6 +219,8 @@ public class NotificationServiceImpl implements NotificationService {
                 notification.getType(),
                 notification.getTitle(),
                 notification.getMessage(),
+                notification.getImageUrl(),
+                notification.getDeepLink(),
                 notification.isRead(),
                 notification.getCreatedAt());
     }

@@ -37,6 +37,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        // The STOMP/SockJS handshake carries no Authorization header; auth for
+        // WebSocket happens at the STOMP CONNECT frame instead.
+        String path = request.getServletPath();
+        return path != null && path.startsWith("/ws");
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         String header = request.getHeader("Authorization");

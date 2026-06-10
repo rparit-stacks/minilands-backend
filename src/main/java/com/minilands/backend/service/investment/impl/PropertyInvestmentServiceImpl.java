@@ -20,6 +20,7 @@ import com.minilands.backend.repository.RoiEarningRepository;
 import com.minilands.backend.repository.UserRepository;
 import com.minilands.backend.service.investment.PropertyInvestmentService;
 import com.minilands.backend.service.kyc.KycGuard;
+import com.minilands.backend.service.chat.ChatService;
 import com.minilands.backend.service.notification.NotificationService;
 import com.minilands.backend.service.property.SharePriceValuationService;
 import com.minilands.backend.service.referral.ReferralService;
@@ -47,6 +48,7 @@ public class PropertyInvestmentServiceImpl implements PropertyInvestmentService 
     private final SharePriceValuationService sharePriceValuationService;
     private final NotificationService notificationService;
     private final ReferralService referralService;
+    private final ChatService chatService;
 
     public PropertyInvestmentServiceImpl(
             UserRepository userRepository,
@@ -56,7 +58,8 @@ public class PropertyInvestmentServiceImpl implements PropertyInvestmentService 
             WalletLedgerService walletLedgerService,
             SharePriceValuationService sharePriceValuationService,
             NotificationService notificationService,
-            ReferralService referralService) {
+            ReferralService referralService,
+            ChatService chatService) {
         this.userRepository = userRepository;
         this.propertyRepository = propertyRepository;
         this.holdingRepository = holdingRepository;
@@ -65,6 +68,7 @@ public class PropertyInvestmentServiceImpl implements PropertyInvestmentService 
         this.sharePriceValuationService = sharePriceValuationService;
         this.notificationService = notificationService;
         this.referralService = referralService;
+        this.chatService = chatService;
     }
 
     @Override
@@ -97,6 +101,7 @@ public class PropertyInvestmentServiceImpl implements PropertyInvestmentService 
                 .orElse(null);
 
         Instant now = Instant.now();
+        final boolean newHolding = holding == null;
         if (holding == null) {
             holding = new PropertyHolding();
             holding.setUserId(userId);
@@ -130,6 +135,11 @@ public class PropertyInvestmentServiceImpl implements PropertyInvestmentService 
         // Pay out any pending referral reward now that this investor has invested.
         // Idempotent — only credits once (guarded by User.referralRewardedAt).
         referralService.rewardFirstInvestment(userId);
+
+        // First-time investor in this property → announce them in the group chat.
+        if (newHolding) {
+            chatService.postJoinNotice(property.getId(), userId);
+        }
 
         return toHoldingDetail(holding, property);
     }

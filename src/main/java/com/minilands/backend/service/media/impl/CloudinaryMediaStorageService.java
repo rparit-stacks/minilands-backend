@@ -28,6 +28,20 @@ public class CloudinaryMediaStorageService implements MediaStorageService {
             "application/pdf",
             "video/mp4",
             "video/webm",
+            // Chat attachments: common document types.
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "text/plain",
+            // Voice notes (future-proofing for the chat feature).
+            "audio/mpeg",
+            "audio/mp4",
+            "audio/aac",
+            "audio/ogg",
+            "audio/webm",
+            "audio/m4a",
+            "audio/x-m4a",
             "application/octet-stream"  // Android file picker sends this for images
     );
 

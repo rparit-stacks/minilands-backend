@@ -50,11 +50,14 @@ public class SecurityConfig {
                                 "/api/admin/auth/setup",
                                 "/api/webhooks/razorpay").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/admin/auth/setup/info").permitAll()
+                        // STOMP/SockJS handshake — authenticated at the STOMP CONNECT
+                        // frame via StompAuthChannelInterceptor, not at HTTP layer.
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/kyc/**", "/api/notifications/**", "/api/media/**", "/api/wallet/**",
                                 "/api/properties/**", "/api/investments/**", "/api/dashboard/**",
                                 "/api/voting/**", "/api/marketplace/**", "/api/exit/**", "/api/profile/**",
-                                "/api/referrals/**")
+                                "/api/referrals/**", "/api/chat/**")
                         .hasRole("INVESTOR")
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())

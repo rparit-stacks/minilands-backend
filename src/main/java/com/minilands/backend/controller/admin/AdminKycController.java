@@ -34,6 +34,12 @@ public class AdminKycController {
         return ResponseEntity.ok(adminKycService.listPendingDocuments());
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<KycDocumentResponse>> listAll(
+            @AuthenticationPrincipal AdminPrincipal principal) {
+        return ResponseEntity.ok(adminKycService.listAllDocuments());
+    }
+
     @PutMapping("/documents/{documentId}")
     public ResponseEntity<KycDocumentResponse> reviewDocument(
             @AuthenticationPrincipal AdminPrincipal principal,

@@ -44,6 +44,13 @@ public class AdminKycServiceImpl implements AdminKycService {
     }
 
     @Override
+    public List<KycDocumentResponse> listAllDocuments() {
+        return kycDocumentRepository.findAll().stream()
+                .map(KycSupport::toResponse)
+                .toList();
+    }
+
+    @Override
     public KycDocumentResponse reviewDocument(String adminId, String documentId, KycReviewRequest request) {
         if (request.status() == ApprovalStatus.PENDING) {
             throw new IllegalArgumentException("Review status must be APPROVED or REJECTED");

@@ -12,6 +12,9 @@ public interface AdminKycService {
 
     List<KycDocumentResponse> listPendingDocuments();
 
+    /** All KYC documents across every status — used by the admin review screen. */
+    List<KycDocumentResponse> listAllDocuments();
+
     KycDocumentResponse reviewDocument(String adminId, String documentId, KycReviewRequest request);
 
     void approveUserKyc(String adminId, String userId);

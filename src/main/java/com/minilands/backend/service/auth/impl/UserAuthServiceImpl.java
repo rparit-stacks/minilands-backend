@@ -29,6 +29,8 @@ import com.minilands.backend.service.auth.UserAuthService;
 import com.minilands.backend.service.referral.ReferralService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -38,6 +40,7 @@ import java.util.Optional;
 @Service
 public class UserAuthServiceImpl implements UserAuthService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserAuthServiceImpl.class);
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
     private final EmailOtpRepository emailOtpRepository;
